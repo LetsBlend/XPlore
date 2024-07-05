@@ -6,6 +6,7 @@
 #define XPLORE_GUI_H
 
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 class Window;
 class GLFWwindow;
@@ -19,6 +20,8 @@ public:
     void StartFrame();
     void Render();
     void EndFrame(Window& window);
+
+    inline static ImFont* boldFont;
 };
 
 

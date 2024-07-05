@@ -8,6 +8,8 @@
 
 #include "Window/Window.h"
 
+#include "Util/Fonts.h"
+
 Gui::Gui(GLFWwindow* window)
 {
     // Setup Dear ImGui context
@@ -34,6 +36,21 @@ Gui::Gui(GLFWwindow* window)
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 460");
+
+    // Resize
+    ImGui::GetStyle().ScaleAllSizes(1.5f);
+    io.Fonts->Clear();
+    io.Fonts->AddFontFromFileTTF("Assets/Roboto-Regular.ttf", 26);
+
+    static const ImWchar  iconRanges[]{0xf000, 0xf3ff, 0};
+    ImFontConfig iconsConfig;
+    iconsConfig.MergeMode = true;
+    iconsConfig.PixelSnapH = true;
+    iconsConfig.OversampleH = 3;
+    iconsConfig.OversampleV = 3;
+    io.Fonts->AddFontFromMemoryCompressedTTF(Fonts::font_awesome_data, Fonts::font_awesome_size, 19, &iconsConfig, iconRanges);
+    io.Fonts->Build();
+    boldFont =  io.Fonts->AddFontFromFileTTF("Assets/Roboto-Bold.ttf", 26);
 }
 
 Gui::~Gui()

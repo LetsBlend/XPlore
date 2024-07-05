@@ -15,7 +15,7 @@ Window::Window()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_Window = glfwCreateWindow(640, 480, "XPlore", nullptr, nullptr);
+    m_Window = glfwCreateWindow(1920, 1080, "XPlore", nullptr, nullptr);
     if (!m_Window)
     {
         glfwTerminate();

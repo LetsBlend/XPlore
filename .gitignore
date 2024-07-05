@@ -1,0 +1,10 @@
+#Directories
+.vs/
+bin/
+bin-int/
+out/
+cmake-build-release/
+cmake-build-debug/
+
+#Files
+*.user
