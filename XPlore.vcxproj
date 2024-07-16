@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{FFF4632A-09CD-4900-BE23-ADB18FDF66AE}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="out\build\x64-debug\cmakefiles\3.27.2-msvc1\compileridcxx\CMakeCXXCompilerId.cpp" />
+    <ClCompile Include="out\build\x64-debug\cmakefiles\3.27.2-msvc1\compileridc\CMakeCCompilerId.c" />
+    <ClCompile Include="out\build\x64-debug\cmakefiles\showincludes\main.c" />
+    <ClCompile Include="out\build\x64-debug\cmakefiles\xplore.dir\cmake_pch.cxx" />
+    <ClCompile Include="out\debug\cmakefiles\3.26.4\compileridcxx\CMakeCXXCompilerId.cpp" />
+    <ClCompile Include="out\debug\cmakefiles\3.26.4\compileridc\CMakeCCompilerId.c" />
+    <ClCompile Include="out\debug\cmakefiles\xplore.dir\cmake_pch.hxx.cxx" />
+    <ClCompile Include="out\release\cmakefiles\3.26.4\compileridcxx\CMakeCXXCompilerId.cpp" />
+    <ClCompile Include="out\release\cmakefiles\3.26.4\compileridc\CMakeCCompilerId.c" />
+    <ClCompile Include="out\release\cmakefiles\xplore.dir\cmake_pch.hxx.cxx" />
+    <ClCompile Include="src\Application.cpp" />
+    <ClCompile Include="src\debug\Timer.cpp" />
+    <ClCompile Include="src\DirectoryView.cpp" />
+    <ClCompile Include="src\gui\CmGui.cpp" />
+    <ClCompile Include="src\gui\Gui.cpp" />
+    <ClCompile Include="src\gui\GuiTemplate.cpp" />
+    <ClCompile Include="src\HirarchyView.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\PopUpView.cpp" />
+    <ClCompile Include="src\util\Fonts.cpp" />
+    <ClCompile Include="src\util\unique_vector.cpp" />
+    <ClCompile Include="src\window\Window.cpp" />
+    <ClCompile Include="src\XPloreManager.cpp" />
+    <ClCompile Include="vendor\glad\src\glad.c" />
+    <ClCompile Include="vendor\glfw\deps\getopt.c" />
+    <ClCompile Include="vendor\glfw\deps\tinycthread.c" />
+    <ClCompile Include="vendor\glfw\examples\boing.c" />
+    <ClCompile Include="vendor\glfw\examples\gears.c" />
+    <ClCompile Include="vendor\glfw\examples\heightmap.c" />
+    <ClCompile Include="vendor\glfw\examples\offscreen.c" />
+    <ClCompile Include="vendor\glfw\examples\particles.c" />
+    <ClCompile Include="vendor\glfw\examples\sharing.c" />
+    <ClCompile Include="vendor\glfw\examples\splitview.c" />
+    <ClCompile Include="vendor\glfw\examples\triangle-opengl.c" />
+    <ClCompile Include="vendor\glfw\examples\triangle-opengles.c" />
+    <ClCompile Include="vendor\glfw\examples\wave.c" />
+    <ClCompile Include="vendor\glfw\examples\windows.c" />
+    <ClCompile Include="vendor\glfw\src\cocoa_time.c" />
+    <ClCompile Include="vendor\glfw\src\context.c" />
+    <ClCompile Include="vendor\glfw\src\egl_context.c" />
+    <ClCompile Include="vendor\glfw\src\glx_context.c" />
+    <ClCompile Include="vendor\glfw\src\init.c" />
+    <ClCompile Include="vendor\glfw\src\input.c" />
+    <ClCompile Include="vendor\glfw\src\linux_joystick.c" />
+    <ClCompile Include="vendor\glfw\src\monitor.c" />
+    <ClCompile Include="vendor\glfw\src\null_init.c" />
+    <ClCompile Include="vendor\glfw\src\null_joystick.c" />
+    <ClCompile Include="vendor\glfw\src\null_monitor.c" />
+    <ClCompile Include="vendor\glfw\src\null_window.c" />
+    <ClCompile Include="vendor\glfw\src\osmesa_context.c" />
+    <ClCompile Include="vendor\glfw\src\platform.c" />
+    <ClCompile Include="vendor\glfw\src\posix_module.c" />
+    <ClCompile Include="vendor\glfw\src\posix_poll.c" />
+    <ClCompile Include="vendor\glfw\src\posix_thread.c" />
+    <ClCompile Include="vendor\glfw\src\posix_time.c" />
+    <ClCompile Include="vendor\glfw\src\vulkan.c" />
+    <ClCompile Include="vendor\glfw\src\wgl_context.c" />
+    <ClCompile Include="vendor\glfw\src\win32_init.c" />
+    <ClCompile Include="vendor\glfw\src\win32_joystick.c" />
+    <ClCompile Include="vendor\glfw\src\win32_module.c" />
+    <ClCompile Include="vendor\glfw\src\win32_monitor.c" />
+    <ClCompile Include="vendor\glfw\src\win32_thread.c" />
+    <ClCompile Include="vendor\glfw\src\win32_time.c" />
+    <ClCompile Include="vendor\glfw\src\win32_window.c" />
+    <ClCompile Include="vendor\glfw\src\window.c" />
+    <ClCompile Include="vendor\glfw\src\wl_init.c" />
+    <ClCompile Include="vendor\glfw\src\wl_monitor.c" />
+    <ClCompile Include="vendor\glfw\src\wl_window.c" />
+    <ClCompile Include="vendor\glfw\src\x11_init.c" />
+    <ClCompile Include="vendor\glfw\src\x11_monitor.c" />
+    <ClCompile Include="vendor\glfw\src\x11_window.c" />
+    <ClCompile Include="vendor\glfw\src\xkb_unicode.c" />
+    <ClCompile Include="vendor\glfw\tests\allocator.c" />
+    <ClCompile Include="vendor\glfw\tests\clipboard.c" />
+    <ClCompile Include="vendor\glfw\tests\cursor.c" />
+    <ClCompile Include="vendor\glfw\tests\empty.c" />
+    <ClCompile Include="vendor\glfw\tests\events.c" />
+    <ClCompile Include="vendor\glfw\tests\gamma.c" />
+    <ClCompile Include="vendor\glfw\tests\glfwinfo.c" />
+    <ClCompile Include="vendor\glfw\tests\icon.c" />
+    <ClCompile Include="vendor\glfw\tests\iconify.c" />
+    <ClCompile Include="vendor\glfw\tests\inputlag.c" />
+    <ClCompile Include="vendor\glfw\tests\joysticks.c" />
+    <ClCompile Include="vendor\glfw\tests\monitors.c" />
+    <ClCompile Include="vendor\glfw\tests\msaa.c" />
+    <ClCompile Include="vendor\glfw\tests\reopen.c" />
+    <ClCompile Include="vendor\glfw\tests\tearing.c" />
+    <ClCompile Include="vendor\glfw\tests\threads.c" />
+    <ClCompile Include="vendor\glfw\tests\timeout.c" />
+    <ClCompile Include="vendor\glfw\tests\title.c" />
+    <ClCompile Include="vendor\glfw\tests\triangle-vulkan.c" />
+    <ClCompile Include="vendor\glfw\tests\window.c" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_allegro5.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_android.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_dx10.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_dx9.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_glut.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_opengl2.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_sdl2.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_sdl3.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_sdlrenderer2.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_sdlrenderer3.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_wgpu.cpp" />
+    <ClCompile Include="vendor\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_allegro5\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_android_opengl3\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_emscripten_wgpu\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_glfw_opengl2\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_glfw_opengl3\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_glfw_vulkan\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_glfw_wgpu\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_glut_opengl2\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_null\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl2_directx11\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl2_opengl2\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl2_opengl3\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl2_sdlrenderer2\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl2_vulkan\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl3_opengl3\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_sdl3_sdlrenderer3\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_win32_directx10\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_win32_directx11\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_win32_directx12\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_win32_directx9\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\example_win32_opengl3\main.cpp" />
+    <ClCompile Include="vendor\imgui\examples\libs\usynergy\uSynergy.c" />
+    <ClCompile Include="vendor\imgui\imgui.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_demo.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_draw.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_tables.cpp" />
+    <ClCompile Include="vendor\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="vendor\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="vendor\imgui\misc\fonts\binary_to_compressed_c.cpp" />
+    <ClCompile Include="vendor\imgui\misc\freetype\imgui_freetype.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="out\build\x64-debug\cmakefiles\showincludes\foo.h" />
+    <ClInclude Include="out\build\x64-debug\cmakefiles\xplore.dir\cmake_pch.hxx" />
+    <ClInclude Include="out\debug\cmakefiles\xplore.dir\cmake_pch.hxx" />
+    <ClInclude Include="out\release\cmakefiles\xplore.dir\cmake_pch.hxx" />
+    <ClInclude Include="src\Application.h" />
+    <ClInclude Include="src\debug\Debugger.h" />
+    <ClInclude Include="src\debug\Timer.h" />
+    <ClInclude Include="src\DirectoryView.h" />
+    <ClInclude Include="src\gui\CmGui.h" />
+    <ClInclude Include="src\gui\Gui.h" />
+    <ClInclude Include="src\gui\GuiTemplate.h" />
+    <ClInclude Include="src\HirarchyView.h" />
+    <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\PopUpView.h" />
+    <ClInclude Include="src\util\ConsoleColors.h" />
+    <ClInclude Include="src\util\Fonts.h" />
+    <ClInclude Include="src\util\StringConverter.h" />
+    <ClInclude Include="src\util\unique_vector.h" />
+    <ClInclude Include="src\window\Window.h" />
+    <ClInclude Include="src\XPloreManager.h" />
+    <ClInclude Include="vendor\glad\include\glad\glad.h" />
+    <ClInclude Include="vendor\glad\include\khr\khrplatform.h" />
+    <ClInclude Include="vendor\glfw\deps\getopt.h" />
+    <ClInclude Include="vendor\glfw\deps\glad\gl.h" />
+    <ClInclude Include="vendor\glfw\deps\glad\gles2.h" />
+    <ClInclude Include="vendor\glfw\deps\glad\vulkan.h" />
+    <ClInclude Include="vendor\glfw\deps\linmath.h" />
+    <ClInclude Include="vendor\glfw\deps\mingw\dinput.h" />
+    <ClInclude Include="vendor\glfw\deps\mingw\xinput.h" />
+    <ClInclude Include="vendor\glfw\deps\mingw\_mingw_dxhelper.h" />
+    <ClInclude Include="vendor\glfw\deps\nuklear.h" />
+    <ClInclude Include="vendor\glfw\deps\nuklear_glfw_gl2.h" />
+    <ClInclude Include="vendor\glfw\deps\stb_image_write.h" />
+    <ClInclude Include="vendor\glfw\deps\tinycthread.h" />
+    <ClInclude Include="vendor\glfw\include\glfw\glfw3.h" />
+    <ClInclude Include="vendor\glfw\include\glfw\glfw3native.h" />
+    <ClInclude Include="vendor\glfw\src\cocoa_joystick.h" />
+    <ClInclude Include="vendor\glfw\src\cocoa_platform.h" />
+    <ClInclude Include="vendor\glfw\src\cocoa_time.h" />
+    <ClInclude Include="vendor\glfw\src\internal.h" />
+    <ClInclude Include="vendor\glfw\src\linux_joystick.h" />
+    <ClInclude Include="vendor\glfw\src\mappings.h" />
+    <ClInclude Include="vendor\glfw\src\null_joystick.h" />
+    <ClInclude Include="vendor\glfw\src\null_platform.h" />
+    <ClInclude Include="vendor\glfw\src\platform.h" />
+    <ClInclude Include="vendor\glfw\src\posix_poll.h" />
+    <ClInclude Include="vendor\glfw\src\posix_thread.h" />
+    <ClInclude Include="vendor\glfw\src\posix_time.h" />
+    <ClInclude Include="vendor\glfw\src\win32_joystick.h" />
+    <ClInclude Include="vendor\glfw\src\win32_platform.h" />
+    <ClInclude Include="vendor\glfw\src\win32_thread.h" />
+    <ClInclude Include="vendor\glfw\src\win32_time.h" />
+    <ClInclude Include="vendor\glfw\src\wl_platform.h" />
+    <ClInclude Include="vendor\glfw\src\x11_platform.h" />
+    <ClInclude Include="vendor\glfw\src\xkb_unicode.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_allegro5.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_android.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_dx10.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_dx12.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_dx9.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_glut.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_metal.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_opengl2.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_osx.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_sdl2.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_sdl3.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_sdlrenderer2.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_sdlrenderer3.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_wgpu.h" />
+    <ClInclude Include="vendor\imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="vendor\imgui\examples\example_allegro5\imconfig_allegro5.h" />
+    <ClInclude Include="vendor\imgui\examples\libs\emscripten\emscripten_mainloop_stub.h" />
+    <ClInclude Include="vendor\imgui\examples\libs\glfw\include\glfw\glfw3.h" />
+    <ClInclude Include="vendor\imgui\examples\libs\glfw\include\glfw\glfw3native.h" />
+    <ClInclude Include="vendor\imgui\examples\libs\usynergy\uSynergy.h" />
+    <ClInclude Include="vendor\imgui\imconfig.h" />
+    <ClInclude Include="vendor\imgui\imgui.h" />
+    <ClInclude Include="vendor\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="vendor\imgui\imgui_impl_opengl3.h" />
+    <ClInclude Include="vendor\imgui\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="vendor\imgui\imgui_internal.h" />
+    <ClInclude Include="vendor\imgui\imstb_rectpack.h" />
+    <ClInclude Include="vendor\imgui\imstb_textedit.h" />
+    <ClInclude Include="vendor\imgui\imstb_truetype.h" />
+    <ClInclude Include="vendor\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="vendor\imgui\misc\freetype\imgui_freetype.h" />
+    <ClInclude Include="vendor\imgui\misc\single_file\imgui_single_file.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="out\build\x64-debug\cmakefiles\3.27.2-msvc1\CMakeDetermineCompilerABI_C.bin" />
+    <None Include="out\build\x64-debug\cmakefiles\3.27.2-msvc1\CMakeDetermineCompilerABI_CXX.bin" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\build_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\build_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\compat_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\compat_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\compile_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\compile_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\context_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\context_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\deprecated.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\dir_2127cde8ea5ce082d3189876f5d37d97.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\dir_30cb18455e0338115926d95a0642ff3b.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\dir_62926f066ab206ed864b4f927e9d9c5f.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\dir_c5da75fdc1d6c57999112ed830c87a3c.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\dir_df4f2df5b715f1060d88dd01cf68993b.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\doxygen_crawl.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\files.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\glfw3native_8h.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\glfw3native_8h_source.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\glfw3_8h.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\glfw3_8h_source.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__buttons.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__context.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__errors.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__gamepad__axes.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__gamepad__buttons.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__hat__state.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__init.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__input.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__joysticks.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__keys.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__mods.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__monitor.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__native.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__shapes.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__vulkan.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\group__window.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\index.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\input_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\input_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\internals_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\internal_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\intro_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\intro_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\main_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\monitor_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\monitor_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\moving_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\moving_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\news.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\news_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\pages.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\quick_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\quick_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\struct_g_l_f_wallocator.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\struct_g_l_f_wgamepadstate.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\struct_g_l_f_wgammaramp.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\struct_g_l_f_wimage.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\struct_g_l_f_wvidmode.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\topics.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\vulkan_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\vulkan_guide.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\window_8md.html" />
+    <None Include="out\build\x64-debug\vendor\glfw\docs\html\window_guide.html" />
+    <None Include="out\debug\cmakefiles\3.26.4\CMakeDetermineCompilerABI_C.bin" />
+    <None Include="out\debug\cmakefiles\3.26.4\CMakeDetermineCompilerABI_CXX.bin" />
+    <None Include="out\debug\vendor\glfw\docs\html\build_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\build_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\compat_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\compat_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\compile_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\compile_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\context_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\context_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\deprecated.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\dir_2127cde8ea5ce082d3189876f5d37d97.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\dir_30cb18455e0338115926d95a0642ff3b.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\dir_62926f066ab206ed864b4f927e9d9c5f.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\dir_c5da75fdc1d6c57999112ed830c87a3c.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\dir_df4f2df5b715f1060d88dd01cf68993b.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\doxygen_crawl.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\files.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\glfw3native_8h.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\glfw3native_8h_source.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\glfw3_8h.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\glfw3_8h_source.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__buttons.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__context.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__errors.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__gamepad__axes.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__gamepad__buttons.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__hat__state.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__init.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__input.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__joysticks.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__keys.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__mods.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__monitor.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__native.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__shapes.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__vulkan.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\group__window.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\index.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\input_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\input_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\internals_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\internal_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\intro_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\intro_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\main_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\monitor_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\monitor_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\moving_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\moving_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\news.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\news_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\pages.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\quick_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\quick_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\struct_g_l_f_wallocator.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\struct_g_l_f_wgamepadstate.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\struct_g_l_f_wgammaramp.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\struct_g_l_f_wimage.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\struct_g_l_f_wvidmode.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\topics.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\vulkan_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\vulkan_guide.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\window_8md.html" />
+    <None Include="out\debug\vendor\glfw\docs\html\window_guide.html" />
+    <None Include="out\release\cmakefiles\3.26.4\CMakeDetermineCompilerABI_C.bin" />
+    <None Include="out\release\cmakefiles\3.26.4\CMakeDetermineCompilerABI_CXX.bin" />
+    <None Include="vendor\glfw\docs\footer.html" />
+    <None Include="vendor\glfw\docs\header.html" />
+    <None Include="vendor\imgui\examples\example_emscripten_wgpu\web\index.html" />
+    <None Include="vendor\imgui\examples\example_glfw_wgpu\web\index.html" />
+    <None Include="vendor\imgui\examples\libs\emscripten\shell_minimal.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="out\build\x64-debug\cmakefiles\xplore.dir\manifest.rc" />
+    <ResourceCompile Include="vendor\glfw\examples\glfw.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+    <Text Include="vendor\glad\CMakeLists.txt" />
+    <Text Include="vendor\glfw\CMakeLists.txt" />
+    <Text Include="vendor\imgui\CMakeLists.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

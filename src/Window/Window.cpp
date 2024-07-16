@@ -23,7 +23,7 @@ Window::Window()
     }
 
     glfwMakeContextCurrent(m_Window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 }

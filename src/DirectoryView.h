@@ -12,11 +12,14 @@ class PopUpView;
 class DirectoryView
 {
 public:
+    void DisplayLoadingCircle();
+    void DisplayLoadingBar();
     void DisplayFilePath(XPloreManager& xpManager);
     void DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpView);
 
     std::vector<Directory> m_Directories;
     bool m_Refresh;
+    std::atomic<bool> m_Processing;
 };
 
 

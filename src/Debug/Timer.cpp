@@ -13,5 +13,5 @@ void Timer::StartTime()
 std::chrono::high_resolution_clock::duration Timer::EndTime()
 {
     endTime = std::chrono::high_resolution_clock::now();
-    return std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    return std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime);
 }

@@ -31,11 +31,13 @@ add_executable(XPlore src/main.cpp
         src/DirectoryView.h
         src/PopUpView.cpp
         src/PopUpView.h
-        src/Gui/CmGui.cpp
-        src/Gui/CmGui.h
+        src/Gui/CustomGui.cpp
+        src/Gui/CustomGui.h
         src/Debug/Timer.cpp
         src/Debug/Timer.h
-)
+        src/Util/unique_vector.cpp
+        src/Util/unique_vector.h
+        src/Gui/GuiDocking.cpp)
 
 target_precompile_headers(XPlore PRIVATE src/pch.h)
-target_link_libraries(XPlore PRIVATE glfw glad imgui stdc++fs)
+target_link_libraries(XPlore PRIVATE glfw glad imgui)

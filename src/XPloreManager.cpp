@@ -39,8 +39,9 @@ void XPloreManager::AddNextNodes(Directory& directory)
                  dir.m_FullPath = path;
                  if (!dir.m_FullPath.ends_with('\\'))
                      dir.m_FullPath += '\\';
-                 dir.m_FileName = entry.path().filename().string();
-                 dir.m_IsDirectory = true;
+                 dir.m_Name = entry.path().filename().string();
+                 dir.m_IsFolder = true;
+                 dir.parent = &directory;
                  directory.m_Children.push_back(dir);
              }
          }
@@ -76,6 +77,11 @@ std::vector<Directory> XPloreManager::GetEntriesInDirectory(const std::string &f
     }
 
     return directories;
+}
+
+std::string &XPloreManager::GetLastSelectedDirectory()
+{
+    return m_CurrentDirectoryPaths[m_CurrentDirectoryPaths.size() - 1];
 }
 
 void XPloreManager::ScaleFileSizes(uintmax_t fileSize, int &bytes, std::string &type)
@@ -129,10 +135,10 @@ void XPloreManager::LaunchFile(const Directory& file)
 {
     int result = system(("\"" + file.m_FullPath + "\"").c_str());
     if(result == -1)
-        Debug::Error("Failed to open file:", file.m_FileName);
+        Debug::Error("Failed to open file:", file.m_Name);
 }
 
-std::string XPloreManager::RenameFile(const std::string &filePath, const std::string &newName)
+std::string XPloreManager::RenameItem(const std::string &filePath, const std::string &newName)
 {
     std::string source = filePath;
     if(source.ends_with('\\'))
@@ -168,4 +174,82 @@ void XPloreManager::GetSizeAndDateModified(Directory& dir)
         dir.m_FileSize = -1;
         dir.m_DateLastModified = "???";
     }
+}
+
+void XPloreManager::PasteFiles(const PasteOptions &pasteOptons, std::vector<Source> &sources, const std::string &dest)
+{
+    for (int i = 0; i < sources.size(); i++)
+    {
+        std::string destination = dest;
+        destination += sources[i].m_SourceName;
+        if (sources[i].m_SourcePath.ends_with('\\'))
+            sources[i].m_SourcePath.pop_back();
+
+        // Remove or Rename if file already exists
+        int duplicates = 0;
+        for(;;)
+        {
+            if(!std::filesystem::exists(destination))
+                break;
+            if(!(pasteOptons & PasteOptions::Duplicate))
+                break;
+
+            int id = destination.find_last_of('\\');
+            destination.erase(id + 1);
+            destination += sources[i].m_SourceName + "-Duplicate(" + toString(duplicates) + ")";
+            Debug::Info(destination);
+            if(!std::filesystem::exists(destination))
+                break;
+
+            duplicates++;
+        }
+
+        if(pasteOptons & PasteOptions::Copy)
+            system(("robocopy " + sources[i].m_SourcePath + " " + destination + " /e").c_str());
+        else
+            system(("robocopy " + sources[i].m_SourcePath + " " + destination + " /e /move").c_str());
+    }
+}
+
+void XPloreManager::PermanentlyDelete(const Source &source)
+{
+    std::string deletePath = source.m_SourcePath;
+    if (deletePath.ends_with('\\'))
+        deletePath.pop_back();
+
+    // Iterate over and delete the files
+    if(source.m_IsFolder)
+    {
+        try{
+            for (const auto &entry: std::filesystem::recursive_directory_iterator(deletePath))
+            {
+                const auto &path = entry.path();
+                if (!entry.is_directory())
+                {
+                    try {
+                        std::filesystem::permissions(path,
+                                                     std::filesystem::perms::owner_all | std::filesystem::perms::group_all |
+                                                     std::filesystem::perms::others_all,
+                                                     std::filesystem::perm_options::add);
+                        std::filesystem::remove(path);
+                    } catch (const std::filesystem::filesystem_error &e) {
+                        Debug::Error("Failed to delete the file:", e.what());
+                    }
+                }
+            }
+        } catch (const std::filesystem::filesystem_error &e) {
+            Debug::Error("Failed to delete the folder:", e.what());
+        }
+    }
+
+    // Delete the remaining folders
+    try {
+        std::filesystem::remove_all(deletePath);
+    } catch (const std::filesystem::filesystem_error &e) {
+        Debug::Error("Failed to delete the folder:", e.what());
+    }
+
+    int id = deletePath.find_last_of('\\');
+    deletePath.erase(id);
+    GetLastSelectedDirectory() = deletePath;
 }

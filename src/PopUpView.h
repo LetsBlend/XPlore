@@ -10,23 +10,10 @@
 class DirectoryView;
 class HirarchyView;
 
-enum class CopyOrCut
-{
-    Copy,
-    Cut
-};
-
-struct Source
-{
-    std::string m_SourcePath;
-    std::string m_SourceName;
-};
-
 class PopUpView
 {
 public:
     void DisplayPopUp(XPloreManager& xpManager, HirarchyView& hirarchyView, DirectoryView& directoryView);
-    void PasteFiles(std::vector<Source> &sources, const std::string& dest);
 
     bool m_IsOpen = false;
     bool m_Rename = false;
@@ -36,7 +23,7 @@ public:
 
     std::unordered_set<Directory> m_Directories;
     std::vector<Source> m_Sources;
-    CopyOrCut m_CopyOrCut;
+    PasteOptions m_PasteOptions;
 };
 
 

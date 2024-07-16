@@ -10,6 +10,21 @@
 
 #include "Util/Fonts.h"
 
+namespace ImGui
+{
+    bool IsWindowRectHovered()
+    {
+        if (ImGui::GetMousePos().x >= ImGui::GetWindowPos().x &&
+            ImGui::GetMousePos().x <= (ImGui::GetWindowPos().x + ImGui::GetWindowSize().x) &&
+            ImGui::GetMousePos().y >= ImGui::GetWindowPos().y &&
+            ImGui::GetMousePos().y <= (ImGui::GetWindowPos().y + ImGui::GetWindowSize().y))
+            return true;
+
+        return false;
+    }
+}
+
+
 Gui::Gui(GLFWwindow* window)
 {
     // Setup Dear ImGui context
@@ -40,7 +55,7 @@ Gui::Gui(GLFWwindow* window)
     // Resize
     ImGui::GetStyle().ScaleAllSizes(1.5f);
     io.Fonts->Clear();
-    io.Fonts->AddFontFromFileTTF("Assets/Roboto-Regular.ttf", 26);
+    m_RegularFont = io.Fonts->AddFontFromFileTTF("Assets/Roboto-Regular.ttf", 26);
 
     static const ImWchar  iconRanges[]{0xf000, 0xf3ff, 0};
     ImFontConfig iconsConfig;
@@ -50,7 +65,7 @@ Gui::Gui(GLFWwindow* window)
     iconsConfig.OversampleV = 3;
     io.Fonts->AddFontFromMemoryCompressedTTF(Fonts::font_awesome_data, Fonts::font_awesome_size, 19, &iconsConfig, iconRanges);
     io.Fonts->Build();
-    boldFont =  io.Fonts->AddFontFromFileTTF("Assets/Roboto-Bold.ttf", 26);
+    m_BoldFont = io.Fonts->AddFontFromFileTTF("Assets/Roboto-Bold.ttf", 26);
 }
 
 Gui::~Gui()

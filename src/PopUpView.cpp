@@ -10,8 +10,26 @@
 #include <shlobj.h> // For SHFileOperation
 #include <sys/stat.h>
 
+static std::vector<std::future<void>> g_AsyncOperation;
 void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyView, DirectoryView &directoryView)
 {
+    // Check if there is still an operation running
+    int i = 0;
+    for(const auto& asyncOp : g_AsyncOperation)
+    {
+        if(asyncOp.valid())
+        {
+            auto status = asyncOp.wait_for(0ms);
+            if (status == std::future_status::ready)
+                i++;
+        }
+    }
+    if(i == g_AsyncOperation.size())
+    {
+        g_AsyncOperation.clear();
+        directoryView.m_Processing = false;
+    }
+
     if (m_IsOpen)
     {
         ImGui::OpenPopup("PopUp");
@@ -19,16 +37,17 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
     }
 
     bool sameFile = false;
+    bool permaDelete = false;
     if (ImGui::BeginPopup("PopUp"))
     {
-        Debug::Info("Directories:", toString(m_Directories.size()));
-        Debug::Info("Sources:", toString(m_Sources.size()));
+        // Debug::Info("Directories:", toString(m_Directories.size()));
+        // Debug::Info("Sources:", toString(m_Sources.size()));
 
         if (ImGui::Selectable("New"))
         {
             m_Sources.clear();
             for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_FileName));
+                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name));
 
             m_CreateNew = true;
         }
@@ -36,7 +55,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         {
             for (const Directory &directory: m_Directories)
             {
-                if (directory.m_IsDirectory)
+                if (directory.m_IsFolder)
                     continue;
 
                 std::thread runThread(&XPloreManager::LaunchFile, xpManager, directory);
@@ -47,6 +66,9 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         {
             for (const Directory &directory: m_Directories)
             {
+                if (directory.m_IsFolder)
+                    continue;
+
                 SHELLEXECUTEINFO shExInfo = {0};
                 shExInfo.cbSize = sizeof(SHELLEXECUTEINFO);
                 shExInfo.fMask = SEE_MASK_INVOKEIDLIST;
@@ -59,59 +81,77 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
                 shExInfo.hInstApp = NULL;
                 ShellExecuteEx(&shExInfo);
             }
-
         }
         if (ImGui::Selectable("Compress to ZIP file"))
         {
+            std::string previousDirectory;
             for (const Directory &directory: m_Directories)
             {
-                if (directory.m_IsDirectory)
+                if (directory.m_IsFolder)
                 {
-                    std::string previousDirectory = xpManager.m_CurrentDirectoryPath;
+                    previousDirectory = xpManager.m_CurrentDirectoryPaths[0];
                     previousDirectory.pop_back();
                     int id = previousDirectory.find_last_of('\\');
                     previousDirectory.erase(id + 1);
-                    system(("cd /D " + previousDirectory + " && tar -a -c -f \"" + directory.m_FileName + ".zip\" \"" +
-                            directory.m_FileName + "\"").c_str());
-                } else
+                    g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                        directoryView.m_Processing = true;
+                        system(("cd /D " + previousDirectory + " && tar -a -c -f \"" + directory.m_Name + ".zip\" \"" +
+                                directory.m_Name + "\"").c_str());
+                        directoryView.m_Refresh = true;
+                        hirarchyView.m_Refresh = true;
+                    }));
+                }
+                else
                 {
-                    system(("cd /D " + xpManager.m_CurrentDirectoryPath + " && tar -a -c -f \"" + directory.m_FileName +
-                            ".zip\" \"" + directory.m_FileName + "\"").c_str());
+                    g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                        directoryView.m_Processing = true;
+                        system(("cd /D " + xpManager.m_CurrentDirectoryPaths[0] + " && tar -a -c -f \"" + directory.m_Name +
+                                ".zip\" \"" + directory.m_Name + "\"").c_str());
+                        directoryView.m_Refresh = true;
+                        hirarchyView.m_Refresh = true;
+                    }));
                 }
             }
-            directoryView.m_Refresh = true;
-            hirarchyView.m_Refresh = true;
+            if(!previousDirectory.empty())
+            {
+                xpManager.m_CurrentDirectoryPaths.clear();
+                xpManager.m_CurrentDirectoryPaths.push_back(previousDirectory);
+            }
         }
         if (ImGui::Selectable("Cut"))
         {
             m_Sources.clear();
             for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_FileName));
-            m_CopyOrCut = CopyOrCut::Cut;
+                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name, directory.m_IsFolder));
+            m_PasteOptions = PasteOptions::Cut;
         }
         if (ImGui::Selectable("Copy"))
         {
             m_Sources.clear();
             for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_FileName));
-            m_CopyOrCut = CopyOrCut::Copy;
+                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name, directory.m_IsFolder));
+            m_PasteOptions = PasteOptions::Copy;
         }
         if (ImGui::Selectable("Paste"))
         {
-            for (int i = 0; i < m_Sources.size(); i++)
+            for (Source& m_Source : m_Sources)
             {
                 struct stat fileStatus;
-                std::string newStr = xpManager.m_CurrentDirectoryPath;
-                newStr += "\\" + m_Sources[i].m_SourceName;
+                std::string newStr = xpManager.GetLastSelectedDirectory();
+                newStr += "\\" + m_Source.m_SourceName;
                 if (stat(newStr.c_str(), &fileStatus) >= 0)
                     sameFile = true;
             }
 
             if (!sameFile)
-                PasteFiles(m_Sources, xpManager.m_CurrentDirectoryPath);
-
-            directoryView.m_Refresh = true;
-            hirarchyView.m_Refresh = true;
+            {
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                    directoryView.m_Processing = true;
+                    xpManager.PasteFiles(m_PasteOptions, m_Sources, xpManager.GetLastSelectedDirectory());
+                    directoryView.m_Refresh = true;
+                    hirarchyView.m_Refresh = true;
+                }));
+            }
         }
         if (ImGui::Selectable("Rename"))
         {
@@ -120,68 +160,57 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
                 m_Sources.clear();
                 for (const Directory &directory: m_Directories)
                 {
-                    m_NewName = directory.m_FileName;
-                    m_Sources.push_back(Source(directory.m_FullPath, directory.m_FileName));
+                    m_NewName = directory.m_Name;
+                    m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name));
                 }
                 m_Rename = true;
                 directoryView.m_Refresh = true;
-                hirarchyView.m_Refresh = true;
             }
         }
         if (ImGui::Selectable("Delete"))
         {
-            for (const Directory &directory: m_Directories)
-            {
-                int result = 0;
-                std::string deletePath = directory.m_FullPath;
-                if (deletePath.ends_with('\\'))
-                    deletePath.pop_back();
-                deletePath += '\0';
-                for (int i = 0; i < 3; i++)
-                {
-                    SHFILEOPSTRUCTA fileOp = {0};
-                    fileOp.hwnd = NULL;
-                    fileOp.wFunc = FO_DELETE;
-                    fileOp.pFrom = deletePath.c_str();
-                    fileOp.pTo = NULL;
-                    fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
-                    result = SHFileOperationA(&fileOp);
-                    if (result == 0)
-                        break;
-                }
-                if (result != 0)
-                    MessageBoxA(NULL, ("Failed to delete file: " + toString(result)).c_str(), FALSE, 0);
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                directoryView.m_Processing = true;
 
-                int id = deletePath.find_last_of('\\');
-                deletePath.erase(id);
-                xpManager.m_CurrentDirectoryPath = deletePath;
-            }
-            directoryView.m_Refresh = true;
-            hirarchyView.m_Refresh = true;
+                for (const Directory &directory: m_Directories)
+                {
+                    int result = 0;
+                    std::string deletePath = directory.m_FullPath;
+                    if (deletePath.ends_with('\\'))
+                        deletePath.pop_back();
+                    deletePath += '\0';
+                    for (int i = 0; i < 3; i++)
+                    {
+                        SHFILEOPSTRUCTA fileOp = {0};
+                        fileOp.hwnd = NULL;
+                        fileOp.wFunc = FO_DELETE;
+                        fileOp.pFrom = deletePath.c_str();
+                        fileOp.pTo = NULL;
+                        fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
+                        result = SHFileOperationA(&fileOp);
+                        if (result == 0)
+                            break;
+                    }
+                    if (result != 0)
+                        MessageBoxA(NULL, ("Failed to delete file: " + toString(result)).c_str(), FALSE, 0);
+
+                    int id = deletePath.find_last_of('\\');
+                    deletePath.erase(id);
+                    xpManager.GetLastSelectedDirectory() = deletePath;
+                }
+
+                directoryView.m_Refresh = true;
+                hirarchyView.m_Refresh = true;
+            }));
         }
         if (ImGui::Selectable("Permanently Delete"))
         {
-            for (const Directory& directory: m_Directories)
-            {
-                std::string deletePath = directory.m_FullPath;
-                if (deletePath.ends_with('\\'))
-                    deletePath.pop_back();
-                deletePath += '\0';
-                if (directory.m_IsDirectory)
-                {
-                    if(directory.m_FullPath[directory.m_FullPath.size() - 4] == '.' && directory.m_FullPath[directory.m_FullPath.size() - 3] == 'z' &&
-                    directory.m_FullPath[directory.m_FullPath.size() - 2] == 'i' && directory.m_FullPath[directory.m_FullPath.size() - 1] == 'p')
-                        std::filesystem::remove(deletePath.c_str());
-                    else
-                        std::filesystem::remove_all(deletePath.c_str());
-                }
-                else
-                    std::filesystem::remove(deletePath.c_str());
+            permaDelete = true;
+            m_Sources.clear();
 
-                int id = deletePath.find_last_of('\\');
-                deletePath.erase(id);
-                xpManager.m_CurrentDirectoryPath = deletePath;
-            }
+            for (const Directory &directory: m_Directories)
+                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name, directory.m_IsFolder));
+
             directoryView.m_Refresh = true;
             hirarchyView.m_Refresh = true;
         }
@@ -189,14 +218,70 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         m_Directories.clear();
         ImGui::End();
     }
-    if (sameFile)
+
+    // Replace File/Duplicate/None when copying
+    if(sameFile)
     {
         ImGui::OpenPopup("##Replace");
-        ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x - 280 - 50, ImGui::GetMousePos().y - 50 - 25));
+        ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x - 280, ImGui::GetMousePos().y - 150));
+    }
+    ImGui::SetNextWindowSize(ImVec2(560, 250));
+    if (ImGui::BeginPopup("##Replace"))
+    {
+        ImGui::SetCursorPosY(20);
+        ImGui::PushFont(Gui::m_BoldFont);
+        ImGui::Text("The destination already exists!");
+        ImGui::PopFont();
+        ImGui::SetCursorPosY(68);
+        if (ImGui::Button("##Overwrite", ImVec2(ImGui::GetWindowWidth(), 50)))
+        {
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                directoryView.m_Processing = true;
+                xpManager.PasteFiles(m_PasteOptions , m_Sources, xpManager.GetLastSelectedDirectory());
+                directoryView.m_Refresh = true;
+                hirarchyView.m_Refresh = true;
+            }));
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(20);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        ImGui::Text("Overwrite");
+        if (ImGui::Button("##Duplicate", ImVec2(ImGui::GetWindowWidth(), 50)))
+        {
+            m_PasteOptions |= PasteOptions::Duplicate;
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                directoryView.m_Processing = true;
+                xpManager.PasteFiles(m_PasteOptions , m_Sources, xpManager.GetLastSelectedDirectory());
+                directoryView.m_Refresh = true;
+                hirarchyView.m_Refresh = true;
+            }));
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(20);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        ImGui::Text("Duplicate");
+        if (ImGui::Button("##None", ImVec2(ImGui::GetWindowWidth(), 50)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        ImGui::SetCursorPosX(20);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+        ImGui::Text("None");
+
+        ImGui::End();
     }
 
+    // Permanently Delete
+    if(permaDelete)
+    {
+        ImGui::OpenPopup("##PermaDelete");
+        ImGui::SetNextWindowPos(ImVec2(ImGui::GetMousePos().x - 280 - 50, ImGui::GetMousePos().y - 50 - 25));
+    }
     ImGui::SetNextWindowSize(ImVec2(560, 130));
-    if (ImGui::BeginPopup("##Replace"))
+    if(ImGui::BeginPopup("##PermaDelete"))
     {
         ImGui::SetCursorPosY(20);
         ImGui::Text("Are you sure you want to replace the file in destination?");
@@ -204,7 +289,14 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         ImGui::SetCursorPosY(68);
         if (ImGui::Button("Yes", ImVec2(100, 30)))
         {
-            PasteFiles(m_Sources, xpManager.m_CurrentDirectoryPath);
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                directoryView.m_Processing = true;
+                for (const Source &source : m_Sources)
+                    xpManager.PermanentlyDelete(source);
+                directoryView.m_Refresh = true;
+                hirarchyView.m_Refresh = true;
+            }));
+
             ImGui::CloseCurrentPopup();
         }
 
@@ -213,32 +305,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         {
             ImGui::CloseCurrentPopup();
         }
-        directoryView.m_Refresh = true;
         ImGui::End();
     }
 }
 
-void PopUpView::PasteFiles(std::vector<Source> &sources, const std::string &dest)
-{
-    for (int i = 0; i < sources.size(); i++)
-    {
-        std::string newStr = dest;
-        newStr += sources[i].m_SourceName;
-        if(sources[i].m_SourcePath.ends_with('\\'))
-            sources[i].m_SourcePath.pop_back();
-
-        try {
-            std::filesystem::remove_all(newStr.c_str());
-        }
-        catch(std::filesystem::filesystem_error& e) {}
-        if (m_CopyOrCut == CopyOrCut::Cut)
-        {
-            std::filesystem::copy(sources[i].m_SourcePath.c_str(), newStr.c_str());
-            std::filesystem::remove_all(sources[i].m_SourcePath.c_str());
-        }
-        else
-        {
-            std::filesystem::copy(sources[i].m_SourcePath.c_str(), newStr.c_str());
-        }
-    }
-}

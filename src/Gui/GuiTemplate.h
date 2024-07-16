@@ -6,7 +6,6 @@
 #define XPLORE_GUITEMPLATE_H
 
 
-void WindowDocking();
 void ExampleWindow();
 
 

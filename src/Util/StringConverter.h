@@ -7,6 +7,7 @@
 #define CLOSINGIN_STRING_H
 
 #include <filesystem>
+#include <chrono>
 
 // Concept to check for container (has begin and end)
 template<typename T>
@@ -65,7 +66,7 @@ static std::string toString(const Arg& obj)
 {
     return obj.toString();
 }
-
+/*
 // Handle file system
 static std::string to_String(const std::filesystem::file_time_type& ftime)
 {
@@ -75,6 +76,7 @@ static std::string to_String(const std::filesystem::file_time_type& ftime)
     str.pop_back(); // rm the trailing '\n' put by `asctime`
     return str;
 }
+*/
 
 // Handling sequence containers
 template<SequenceContainer Arg>

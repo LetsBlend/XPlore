@@ -6,16 +6,32 @@
 #include "XPloreManager.h"
 #include "PopUpView.h"
 
-#include "Gui/CmGui.h"
+#include "Gui/CustomGui.h"
 #include "Util/Fonts.h"
+
+void DirectoryView::DisplayLoadingCircle()
+{
+    if(!m_Processing)
+        return;
+    const ImU32 col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+    ImGui::Spinner("##Spinny", 15, 6, col);
+    ImGui::SameLine();
+}
+
+void DirectoryView::DisplayLoadingBar()
+{
+    const ImU32 col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+    const ImU32 bg = ImGui::GetColorU32(ImGuiCol_Button);
+    ImGui::BufferingBar("##BuffyBar", 0.7f, ImVec2(ImGui::GetWindowWidth(), 6), bg, col);
+}
 
 void DirectoryView::DisplayFilePath(XPloreManager& xpManager)
 {
     ImGui::PushItemWidth(ImGui::GetWindowWidth());
     xpManager.m_IsChangingHeaderPath = false;
-    if(ImGui::InputText("##Path", &xpManager.m_CurrentDirectoryPath) && xpManager.DoesPathExist(xpManager.m_CurrentDirectoryPath))
+    if(ImGui::InputText("##Path", &xpManager.GetLastSelectedDirectory()) && xpManager.DoesPathExist(xpManager.GetLastSelectedDirectory()))
     {
-        xpManager.m_CurrentDirectoryPathNames = xpManager.ConvertPathToNames(xpManager.m_CurrentDirectoryPath);
+        xpManager.m_CurrentDirectoryPathNames = xpManager.ConvertPathToNames(xpManager.GetLastSelectedDirectory());
         xpManager.m_IsChangingHeaderPath = true;
     }
     ImGui::PopItemWidth();
@@ -30,13 +46,13 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
     int longestText = 200;
     for(const Directory& directory : m_Directories)
     {
-        int length = (int)ImGui::CalcTextSize(directory.m_FileName.c_str()).x;
+        int length = (int)ImGui::CalcTextSize(directory.m_Name.c_str()).x;
         if(length >= longestText)
             longestText = length;
     }
 
     // Window Headers
-    ImGui::PushFont(Gui::boldFont);
+    ImGui::PushFont(Gui::m_BoldFont);
     ImGui::SetCursorPosX(22);
     ImGui::Text("Name");
     ImGui::SameLine();
@@ -51,7 +67,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
     ImGui::PopFont();
 
     // Create New File
-    if(popUpView.m_CreateNew && !popUpView.m_NewFolder)
+    if(popUpView.m_CreateNew && !popUpView.m_NewFolder && xpManager.m_CurrentDirectoryPaths.size() == 1)
     {
         ImGui::SetKeyboardFocusHere();
         ImGui::SetItemDefaultFocus();
@@ -61,14 +77,14 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
         {
             if(ImGui::IsKeyDown(ImGuiKey_Enter) || ImGui::IsKeyDown(ImGuiKey_Escape))
             {
-                std::ofstream outFile(xpManager.m_CurrentDirectoryPath + popUpView.m_NewName);
+                std::ofstream outFile(xpManager.GetLastSelectedDirectory() + popUpView.m_NewName);
                 outFile.close();
                 popUpView.m_CreateNew = false;
             }
         }
         if(!ImGui::IsItemHovered() && ImGui::IsAnyMouseDown())
         {
-            std::ofstream outFile(xpManager.m_CurrentDirectoryPath + popUpView.m_NewName);
+            std::ofstream outFile(xpManager.GetLastSelectedDirectory() + popUpView.m_NewName);
             outFile.close();
             popUpView.m_CreateNew = false;
         }
@@ -88,25 +104,21 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
     if(!m_Directories.empty())
     {
         source = m_Directories[0].m_FullPath;
-        for(int i = m_Directories[0].m_FullPath.size() - 1; i >= 0; i--)
-        {
-            if(m_Directories[0].m_FullPath[i] == '\\')
-                break;
-            source.pop_back();
-        }
+        int id = source.find_last_of('\\');
+        source.erase(id + 1);
     }
 
-    if(source != xpManager.m_CurrentDirectoryPath || ImGui::IsKeyDown(ImGuiKey_F5))
+    if(source != xpManager.GetLastSelectedDirectory())
         m_Refresh = true;
 
     if(m_Refresh)
     {
-        m_Directories = xpManager.GetEntriesInDirectory(xpManager.m_CurrentDirectoryPath);
+        m_Directories = xpManager.GetEntriesInDirectory(xpManager.GetLastSelectedDirectory());
         m_Refresh = false;
     }
 
     // Check if files or path exists
-    if(!xpManager.DoesPathExist(xpManager.m_CurrentDirectoryPath))
+    if(!xpManager.DoesPathExist(xpManager.GetLastSelectedDirectory()))
     {
         ImGui::Text("The current path does not exist");
         return;
@@ -120,9 +132,9 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
     int id = 0;
     for(Directory& directory : m_Directories)
     {
-        if(directory.m_IsDirectory)
+        if(directory.m_IsFolder)
         {
-            //DEPRECATED MAYBE IN THE FUTURE FOLDERS WILL BE DISPLAYED IN THE DIRECTORY WINDOW AS WELL
+            // "DEPRECATED" MAYBE IN THE FUTURE FOLDERS WILL BE DISPLAYED IN THE DIRECTORY WINDOW AS WELL
             // First part - Red
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 217.0f / 255.0f, 112.0f / 255.0f, 1.0f));
             ImGui::Text(ICON_FA_FOLDER);
@@ -131,7 +143,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-            ImGui::Text(directory.m_FileName.c_str());
+            ImGui::Text(directory.m_Name.c_str());
             ImGui::PopStyleColor();
         }
         else
@@ -139,7 +151,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             // File Renaming
             if(!popUpView.m_Sources.empty())
             {
-                if((popUpView.m_Sources[0].m_SourceName == directory.m_FileName) && popUpView.m_Rename)
+                if((popUpView.m_Sources[0].m_SourceName == directory.m_Name) && popUpView.m_Rename)
                 {
                     ImGui::SetKeyboardFocusHere();
                     ImGui::SetItemDefaultFocus();
@@ -149,13 +161,13 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
                     {
                         if(ImGui::IsKeyDown(ImGuiKey_Enter) || ImGui::IsKeyDown(ImGuiKey_Escape))
                         {
-                            xpManager.RenameFile(popUpView.m_Sources[0].m_SourcePath, popUpView.m_NewName);
+                            xpManager.RenameItem(popUpView.m_Sources[0].m_SourcePath, popUpView.m_NewName);
                             popUpView.m_Rename = false;
                         }
                     }
                     if(!ImGui::IsItemHovered() && ImGui::IsAnyMouseDown())
                     {
-                        xpManager.RenameFile(popUpView.m_Sources[0].m_SourcePath, popUpView.m_NewName);
+                        xpManager.RenameItem(popUpView.m_Sources[0].m_SourcePath, popUpView.m_NewName);
                         popUpView.m_Rename = false;
                     }
                     ImGui::PopItemWidth();
@@ -175,7 +187,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             else if(ImGui::IsKeyReleased(ImGuiKey_LeftShift) || ImGui::IsKeyReleased(ImGuiKey_RightShift))
                 g_IsShiftPressed = false;
 
-            if(CmGui::ToggleSwitch(("##" + directory.m_FileName).c_str(), &directory.m_IsSelected))
+            if(ImGui::ToggleSwitch(("##" + directory.m_Name).c_str(), &directory.m_IsFileSelected) && ImGui::IsWindowRectHovered())
             {
                 popUpView.m_Directories.insert(directory);
 
@@ -187,33 +199,26 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
                         if(g_PreviousSelectedDirId < id)
                         {
                             if(subId >= g_PreviousSelectedDirId && subId <= id)
-                                dir.m_IsSelected = true;
+                                dir.m_IsFileSelected = true;
                         }
                         else
                         {
                             if(subId >= id && subId <= g_PreviousSelectedDirId)
-                                dir.m_IsSelected = true;
+                                dir.m_IsFileSelected = true;
                         }
                         subId++;
                     }
                 }
 
-                if(!g_IsCtrlPressed && !g_IsShiftPressed && ImGui::IsAnyMouseDown() && ImGui::IsWindowFocused())
+                if(!g_IsCtrlPressed && !g_IsShiftPressed && ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowFocused())
                 {
                     for(Directory& dir : m_Directories)
                     {
                         if(dir.m_FullPath != directory.m_FullPath || !ImGui::IsItemHovered())
-                            dir.m_IsSelected = false;
+                            dir.m_IsFileSelected = false;
                     }
                 }
                 g_PreviousSelectedDirId = id;
-            }
-
-            // Open Files
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-            {
-                std::thread fileThread(&XPloreManager::LaunchFile, xpManager, directory);
-                fileThread.detach();
             }
 
             // Handle Right Click Manu
@@ -222,6 +227,13 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
                 popUpView.m_Directories.insert(directory);
                 popUpView.m_IsOpen = true;
                 popUpView.m_NewFolder = false;
+            }
+
+            // Open Files
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                std::thread fileThread(&XPloreManager::LaunchFile, xpManager, directory);
+                fileThread.detach();
             }
 
             // Handling Name on the File with Color
@@ -233,7 +245,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-            ImGui::Text(directory.m_FileName.c_str());
+            ImGui::Text(directory.m_Name.c_str());
             ImGui::PopStyleColor();
 
             // Handle Date
