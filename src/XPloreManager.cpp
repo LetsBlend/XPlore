@@ -41,7 +41,7 @@ void XPloreManager::AddNextNodes(Directory& directory)
                      dir.m_FullPath += '\\';
                  dir.m_Name = entry.path().filename().string();
                  dir.m_IsFolder = true;
-                 dir.parent = &directory;
+                 dir.m_Parent = &directory;
                  directory.m_Children.push_back(dir);
              }
          }

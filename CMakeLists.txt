@@ -25,12 +25,12 @@ add_executable(XPlore src/main.cpp
         src/Util/ConsoleColors.h
         src/Debug/Debugger.h
         src/Util/StringConverter.h
-        src/HirarchyView.cpp
-        src/HirarchyView.h
-        src/DirectoryView.cpp
-        src/DirectoryView.h
-        src/PopUpView.cpp
-        src/PopUpView.h
+        src/Render/HirarchyView.cpp
+        src/Render/HirarchyView.h
+        src/Render/DirectoryView.cpp
+        src/Render/DirectoryView.h
+        src/Render/PopUpView.cpp
+        src/Render/PopUpView.h
         src/Gui/CustomGui.cpp
         src/Gui/CustomGui.h
         src/Debug/Timer.cpp

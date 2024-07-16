@@ -8,6 +8,7 @@ int main()
     Window window;
     Gui gui(window.GetWindow());
 
+    app.ReadDrives();
     while(app.IsRunning())
     {
         app.Update(window, gui);

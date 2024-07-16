@@ -76,7 +76,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
                 xpManager.m_CurrentDirectoryPaths[0] = xpManager.RenameItem(popUpView.m_Sources[0].m_SourcePath,
                                                                             popUpView.m_NewName);
                 popUpView.m_Rename = false;
-                xpManager.AddNextNodes(*directory.parent);
+                xpManager.AddNextNodes(*directory.m_Parent);
             }
         }
         if(!ImGui::IsItemHovered() && ImGui::IsAnyMouseDown())
@@ -84,7 +84,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
             xpManager.m_CurrentDirectoryPaths[0] = xpManager.RenameItem(popUpView.m_Sources[0].m_SourcePath,
                                                                         popUpView.m_NewName);
             popUpView.m_Rename = false;
-            xpManager.AddNextNodes(*directory.parent);
+            xpManager.AddNextNodes(*directory.m_Parent);
         }
 
         ImGui::PopItemWidth();
@@ -110,13 +110,13 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
             xpManager.m_CurrentDirectoryPaths.clear();
 
         // Shift Click
-        if (g_IsShiftPressed && directory.parent != nullptr)
+        if (g_IsShiftPressed && directory.m_Parent != nullptr)
         {
             bool load = false;
             int id = 0;
             int prevID = 0;
             int currentID = 0;
-            for (const Directory& drNode : directory.parent->m_Children)
+            for (const Directory& drNode : directory.m_Parent->m_Children)
             {
                 if(drNode.m_FullPath == xpManager.m_CurrentDirectoryPaths[xpManager.m_CurrentDirectoryPaths.size() - 1])
                     prevID = id;
@@ -128,7 +128,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
 
             for(int i = (prevID < currentID ? prevID : currentID); i < (currentID > prevID ? currentID : prevID); i++)
             {
-                xpManager.m_CurrentDirectoryPaths.emplace_back(directory.parent->m_Children[i].m_FullPath);
+                xpManager.m_CurrentDirectoryPaths.emplace_back(directory.m_Parent->m_Children[i].m_FullPath);
             }
         }
 
@@ -175,7 +175,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
                 try
                 {
                     std::filesystem::create_directory(xpManager.m_CurrentDirectoryPaths[0] + popUpView.m_NewName);
-                    xpManager.AddNextNodes(*directory.parent);
+                    xpManager.AddNextNodes(*directory.m_Parent);
                 }
                 catch(const std::filesystem::filesystem_error& e)
                 {
@@ -190,7 +190,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
             try
             {
                 std::filesystem::create_directory(xpManager.m_CurrentDirectoryPaths[0] + popUpView.m_NewName);
-                xpManager.AddNextNodes(*directory.parent);
+                xpManager.AddNextNodes(*directory.m_Parent);
             }
             catch(const std::filesystem::filesystem_error& e)
             {

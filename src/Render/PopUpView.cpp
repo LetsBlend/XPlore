@@ -4,8 +4,8 @@
 
 #include "PopUpView.h"
 #include "Gui/Gui.h"
-#include "HirarchyView.h"
-#include "DirectoryView.h"
+#include "Render/HirarchyView.h"
+#include "Render/DirectoryView.h"
 
 #include <shlobj.h> // For SHFileOperation
 #include <sys/stat.h>
@@ -30,6 +30,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         directoryView.m_Processing = false;
     }
 
+    // Begin Right Click PopUp
     if (m_IsOpen)
     {
         ImGui::OpenPopup("PopUp");
@@ -40,9 +41,6 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
     bool permaDelete = false;
     if (ImGui::BeginPopup("PopUp"))
     {
-        // Debug::Info("Directories:", toString(m_Directories.size()));
-        // Debug::Info("Sources:", toString(m_Sources.size()));
-
         if (ImGui::Selectable("New"))
         {
             m_Sources.clear();
@@ -84,38 +82,27 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         }
         if (ImGui::Selectable("Compress to ZIP file"))
         {
-            std::string previousDirectory;
             for (const Directory &directory: m_Directories)
             {
-                if (directory.m_IsFolder)
-                {
-                    previousDirectory = xpManager.m_CurrentDirectoryPaths[0];
-                    previousDirectory.pop_back();
-                    int id = previousDirectory.find_last_of('\\');
-                    previousDirectory.erase(id + 1);
-                    g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                        directoryView.m_Processing = true;
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                    directoryView.m_Processing = true;
+                    if (directory.m_IsFolder)
+                    {
+                        std::string previousDirectory = directory.m_FullPath;
+                        previousDirectory.pop_back();
+                        int id = previousDirectory.find_last_of('\\');
+                        previousDirectory.erase(id + 1);
                         system(("cd /D " + previousDirectory + " && tar -a -c -f \"" + directory.m_Name + ".zip\" \"" +
                                 directory.m_Name + "\"").c_str());
-                        directoryView.m_Refresh = true;
-                        hirarchyView.m_Refresh = true;
-                    }));
-                }
-                else
-                {
-                    g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                        directoryView.m_Processing = true;
+                    }
+                    else
+                    {
                         system(("cd /D " + xpManager.m_CurrentDirectoryPaths[0] + " && tar -a -c -f \"" + directory.m_Name +
                                 ".zip\" \"" + directory.m_Name + "\"").c_str());
-                        directoryView.m_Refresh = true;
-                        hirarchyView.m_Refresh = true;
-                    }));
-                }
-            }
-            if(!previousDirectory.empty())
-            {
-                xpManager.m_CurrentDirectoryPaths.clear();
-                xpManager.m_CurrentDirectoryPaths.push_back(previousDirectory);
+                    }
+                    directoryView.m_Refresh = true;
+                    hirarchyView.m_Refresh = true;
+                }));
             }
         }
         if (ImGui::Selectable("Cut"))
@@ -169,16 +156,17 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         }
         if (ImGui::Selectable("Delete"))
         {
-            g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                directoryView.m_Processing = true;
+            directoryView.m_Processing = true;
 
-                for (const Directory &directory: m_Directories)
-                {
+            for (const Directory &directory: m_Directories)
+            {
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
                     int result = 0;
                     std::string deletePath = directory.m_FullPath;
                     if (deletePath.ends_with('\\'))
                         deletePath.pop_back();
                     deletePath += '\0';
+                    // Give it three tries because sometimes it randomly doesn't delete it the first time
                     for (int i = 0; i < 3; i++)
                     {
                         SHFILEOPSTRUCTA fileOp = {0};
@@ -197,11 +185,11 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
                     int id = deletePath.find_last_of('\\');
                     deletePath.erase(id);
                     xpManager.GetLastSelectedDirectory() = deletePath;
-                }
 
-                directoryView.m_Refresh = true;
-                hirarchyView.m_Refresh = true;
-            }));
+                    directoryView.m_Refresh = true;
+                    hirarchyView.m_Refresh = true;
+                }));
+            }
         }
         if (ImGui::Selectable("Permanently Delete"))
         {

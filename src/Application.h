@@ -5,9 +5,9 @@
 #ifndef XPLORE_APPLICATION_H
 #define XPLORE_APPLICATION_H
 
-#include "HirarchyView.h"
-#include "DirectoryView.h"
-#include "PopUpView.h"
+#include "Render/HirarchyView.h"
+#include "Render/DirectoryView.h"
+#include "Render/PopUpView.h"
 #include "XPloreManager.h"
 
 class Window;
@@ -20,6 +20,7 @@ public:
     ~Application() = default;
 
     bool IsRunning();
+    void ReadDrives();
     void Update(Window& window, Gui& gui);
 
 private:
@@ -28,7 +29,7 @@ private:
     DirectoryView m_DirectoryView;
     PopUpView m_PopUpView;
     XPloreManager m_XPManager;
-    Directory m_Root{"C:\\", "C:", true};
+    std::vector<Directory> m_Roots;
 };
 
 

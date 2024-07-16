@@ -13,7 +13,7 @@ struct Directory
     uintmax_t m_FileSize;
     std::string m_DateLastModified;
     std::vector<Directory> m_Children;
-    Directory* parent;
+    Directory* m_Parent;
     bool m_IsParentSelected = false;
     bool m_IsFileSelected = false;
     bool m_IsChecked = false;
