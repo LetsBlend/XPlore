@@ -29,7 +29,7 @@ private:
     DirectoryView m_DirectoryView;
     PopUpView m_PopUpView;
     XPloreManager m_XPManager;
-    std::vector<Directory> m_Roots;
+    std::vector<Item> m_Roots;
 };
 
 

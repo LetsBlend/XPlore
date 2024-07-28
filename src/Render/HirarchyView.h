@@ -5,14 +5,15 @@
 #ifndef XPLORE_HIRARCHYVIEW_H
 #define XPLORE_HIRARCHYVIEW_H
 
-class Directory;
+class Item;
 class XPloreManager;
 class PopUpView;
 
 class HirarchyView
 {
 public:
-    void DisplayHirarchy(bool& itemClicked, Directory& directory, XPloreManager& xpManager, PopUpView& popUpView, int currentNameIndex, int startFlag);
+    bool DisplayRecycleBin(bool& toggled, XPloreManager& xpManager);
+    void DisplayHirarchy(bool& itemClicked, Item& directory, XPloreManager& xpManager, PopUpView& popUpView, int currentNameIndex, int startFlag);
 
     bool m_Refresh;
 };

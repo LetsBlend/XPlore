@@ -48,9 +48,10 @@ void Application::Update(Window& window, Gui& gui)
     int currentNameIndex = 0;
     int gStartFlag = ImGuiTreeNodeFlags_DefaultOpen;
 
-    for(Directory& root : m_Roots)
+    for(Item& root : m_Roots)
         m_HirarchyView.DisplayHirarchy(itemClicked, root, m_XPManager, m_PopUpView, currentNameIndex, gStartFlag);
     m_HirarchyView.m_Refresh = false;
+
     ImGui::End();
 
     ImGui::Begin("Directory");

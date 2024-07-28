@@ -10,7 +10,22 @@
 #include <shlobj.h> // For SHFileOperation
 #include <sys/stat.h>
 
+void PopUpView::AddToOperationQueue(const Item &item)
+{
+    m_Items.insert(item);
+}
+
+void PopUpView::MarkOperationArea(OperationArea opArea)
+{
+    m_OpArea = opArea;
+}
+bool PopUpView::IsCurrentOperationArea(OperationArea opArea)
+{
+    return m_OpArea == opArea;
+}
+
 static std::vector<std::future<void>> g_AsyncOperation;
+
 void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyView, DirectoryView &directoryView)
 {
     // Check if there is still an operation running
@@ -38,33 +53,38 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
     }
 
     bool sameFile = false;
-    bool permaDelete = false;
+    //bool permaDelete = false;
     if (ImGui::BeginPopup("PopUp"))
     {
+        Debug::Info(std::to_string(m_Items.size()));
+        for (const Item &item: m_Items)
+            Debug::Info(item.m_Name);
+        //Debug::Info(std::to_string(m_Sources.size()));
+
         if (ImGui::Selectable("New"))
         {
             m_Sources.clear();
-            for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name));
+            for (const Item &item: m_Items)
+                m_Sources.push_back(Source(item.m_FullPath, item.m_Name));
 
             m_CreateNew = true;
         }
         if (ImGui::Selectable("Open"))
         {
-            for (const Directory &directory: m_Directories)
+            for (const Item &item: m_Items)
             {
-                if (directory.m_IsFolder)
+                if (item.m_IsFolder)
                     continue;
 
-                std::thread runThread(&XPloreManager::LaunchFile, xpManager, directory);
+                std::thread runThread(&XPloreManager::LaunchFile, xpManager, item);
                 runThread.detach();
             }
         }
         if (ImGui::Selectable("Open With"))
         {
-            for (const Directory &directory: m_Directories)
+            for (const Item &item: m_Items)
             {
-                if (directory.m_IsFolder)
+                if (item.m_IsFolder)
                     continue;
 
                 SHELLEXECUTEINFO shExInfo = {0};
@@ -72,7 +92,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
                 shExInfo.fMask = SEE_MASK_INVOKEIDLIST;
                 shExInfo.hwnd = NULL;
                 shExInfo.lpVerb = "openas";  // This is the key to open the "Open With" dialog
-                shExInfo.lpFile = directory.m_FullPath.c_str();
+                shExInfo.lpFile = item.m_FullPath.c_str();
                 shExInfo.lpParameters = NULL;
                 shExInfo.lpDirectory = NULL;
                 shExInfo.nShow = SW_SHOW;
@@ -82,23 +102,23 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         }
         if (ImGui::Selectable("Compress to ZIP file"))
         {
-            for (const Directory &directory: m_Directories)
+            for (const Item &item: m_Items)
             {
                 g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
                     directoryView.m_Processing = true;
-                    if (directory.m_IsFolder)
+                    if (item.m_IsFolder)
                     {
-                        std::string previousDirectory = directory.m_FullPath;
+                        std::string previousDirectory = item.m_FullPath;
                         previousDirectory.pop_back();
                         int id = previousDirectory.find_last_of('\\');
                         previousDirectory.erase(id + 1);
-                        system(("cd /D " + previousDirectory + " && tar -a -c -f \"" + directory.m_Name + ".zip\" \"" +
-                                directory.m_Name + "\"").c_str());
+                        system(("cd /D " + previousDirectory + " && tar -a -c -f \"" + item.m_Name + ".zip\" \"" +
+                                item.m_Name + "\"").c_str());
                     }
                     else
                     {
-                        system(("cd /D " + xpManager.m_CurrentDirectoryPaths[0] + " && tar -a -c -f \"" + directory.m_Name +
-                                ".zip\" \"" + directory.m_Name + "\"").c_str());
+                        system(("cd /D " + xpManager.m_CurrentDirectoryPaths[0] + " && tar -a -c -f \"" + item.m_Name +
+                                ".zip\" \"" + item.m_Name + "\"").c_str());
                     }
                     directoryView.m_Refresh = true;
                     hirarchyView.m_Refresh = true;
@@ -108,15 +128,13 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         if (ImGui::Selectable("Cut"))
         {
             m_Sources.clear();
-            for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name, directory.m_IsFolder));
+            xpManager.AddItemsToClipBoard(m_Items, DROPEFFECT_MOVE);
             m_PasteOptions = PasteOptions::Cut;
         }
         if (ImGui::Selectable("Copy"))
         {
             m_Sources.clear();
-            for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name, directory.m_IsFolder));
+            xpManager.AddItemsToClipBoard(m_Items, DROPEFFECT_COPY);
             m_PasteOptions = PasteOptions::Copy;
         }
         if (ImGui::Selectable("Paste"))
@@ -134,7 +152,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
             {
                 g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
                     directoryView.m_Processing = true;
-                    xpManager.PasteFiles(m_PasteOptions, m_Sources, xpManager.GetLastSelectedDirectory());
+                    xpManager.PasteFiles(m_PasteOptions, xpManager.GetLastSelectedDirectory());
                     directoryView.m_Refresh = true;
                     hirarchyView.m_Refresh = true;
                 }));
@@ -142,71 +160,75 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         }
         if (ImGui::Selectable("Rename"))
         {
-            if(m_Directories.size() == 1)
+            if(m_Items.size() == 1)
             {
                 m_Sources.clear();
-                for (const Directory &directory: m_Directories)
+                for (const Item &item : m_Items)
                 {
-                    m_NewName = directory.m_Name;
-                    m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name));
+                    m_NewName = item.m_Name;
+                    m_Sources.push_back(Source(item.m_FullPath, item.m_Name));
                 }
                 m_Rename = true;
                 directoryView.m_Refresh = true;
             }
         }
-        if (ImGui::Selectable("Delete"))
+        if (ImGui::Selectable("Restore"))
         {
             directoryView.m_Processing = true;
 
-            for (const Directory &directory: m_Directories)
+            for (const Item &item : m_Items)
+            {
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&] {
+                    xpManager.Restore(item);
+                    directoryView.m_Refresh = true;
+                }));
+            }
+        }
+        if(xpManager.GetLastSelectedDirectory() == xpManager.GetCurrentDisk() + "Recycle.Bin\\")
+        {
+            if (ImGui::Selectable("Empty"))
+                xpManager.EmptyRecycleBin();
+        }
+        else
+        {
+            if (ImGui::Selectable("Delete"))
+            {
+                directoryView.m_Processing = true;
+
+                for (const Item &item: m_Items)
+                {
+                    g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                        xpManager.Delete(true, item, xpManager);
+                        directoryView.m_Refresh = true;
+                        hirarchyView.m_Refresh = true;
+                    }));
+                }
+            }
+        }
+        if (ImGui::Selectable("Permanently Delete"))
+        {
+            directoryView.m_Processing = true;
+
+            for (const Item &item: m_Items)
             {
                 g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                    int result = 0;
-                    std::string deletePath = directory.m_FullPath;
-                    if (deletePath.ends_with('\\'))
-                        deletePath.pop_back();
-                    deletePath += '\0';
-                    // Give it three tries because sometimes it randomly doesn't delete it the first time
-                    for (int i = 0; i < 3; i++)
-                    {
-                        SHFILEOPSTRUCTA fileOp = {0};
-                        fileOp.hwnd = NULL;
-                        fileOp.wFunc = FO_DELETE;
-                        fileOp.pFrom = deletePath.c_str();
-                        fileOp.pTo = NULL;
-                        fileOp.fFlags = FOF_ALLOWUNDO | FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
-                        result = SHFileOperationA(&fileOp);
-                        if (result == 0)
-                            break;
-                    }
-                    if (result != 0)
-                        MessageBoxA(NULL, ("Failed to delete file: " + toString(result)).c_str(), FALSE, 0);
-
-                    int id = deletePath.find_last_of('\\');
-                    deletePath.erase(id);
-                    xpManager.GetLastSelectedDirectory() = deletePath;
-
+                    if(xpManager.GetLastSelectedDirectory() == xpManager.GetCurrentDisk() + "Recycle.Bin\\")
+                        xpManager.DeleteFromRecycleBin(item);
+                    else
+                        xpManager.Delete(false, item, xpManager);
                     directoryView.m_Refresh = true;
                     hirarchyView.m_Refresh = true;
                 }));
             }
         }
-        if (ImGui::Selectable("Permanently Delete"))
-        {
-            permaDelete = true;
-            m_Sources.clear();
 
-            for (const Directory &directory: m_Directories)
-                m_Sources.push_back(Source(directory.m_FullPath, directory.m_Name, directory.m_IsFolder));
-
-            directoryView.m_Refresh = true;
-            hirarchyView.m_Refresh = true;
-        }
-
-        m_Directories.clear();
+        m_ItemLock.lock();
+        m_Items.clear();
+        m_ItemLock.unlock();
         ImGui::End();
     }
 
+    /* OLD CODE
     // Replace File/Duplicate/None when copying
     if(sameFile)
     {
@@ -225,7 +247,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         {
             g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
                 directoryView.m_Processing = true;
-                xpManager.PasteFiles(m_PasteOptions , m_Sources, xpManager.GetLastSelectedDirectory());
+                xpManager.PasteFiles(m_PasteOptions, xpManager.GetLastSelectedDirectory());
                 directoryView.m_Refresh = true;
                 hirarchyView.m_Refresh = true;
             }));
@@ -240,7 +262,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
             m_PasteOptions |= PasteOptions::Duplicate;
             g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
                 directoryView.m_Processing = true;
-                xpManager.PasteFiles(m_PasteOptions , m_Sources, xpManager.GetLastSelectedDirectory());
+                xpManager.PasteFiles(m_PasteOptions, xpManager.GetLastSelectedDirectory());
                 directoryView.m_Refresh = true;
                 hirarchyView.m_Refresh = true;
             }));
@@ -272,7 +294,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
     if(ImGui::BeginPopup("##PermaDelete"))
     {
         ImGui::SetCursorPosY(20);
-        ImGui::Text("Are you sure you want to replace the file in destination?");
+        ImGui::Text("Are you sure you want to permanently delete this item?");
         ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 - 110);
         ImGui::SetCursorPosY(68);
         if (ImGui::Button("Yes", ImVec2(100, 30)))
@@ -280,7 +302,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
             g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
                 directoryView.m_Processing = true;
                 for (const Source &source : m_Sources)
-                    xpManager.PermanentlyDelete(source);
+                    xpManager.PermanentlyDelete(source, xpManager);
                 directoryView.m_Refresh = true;
                 hirarchyView.m_Refresh = true;
             }));
@@ -295,5 +317,6 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         }
         ImGui::End();
     }
+     */
 }
 

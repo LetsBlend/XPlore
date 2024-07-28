@@ -29,8 +29,10 @@ void DirectoryView::DisplayFilePath(XPloreManager& xpManager)
 {
     ImGui::PushItemWidth(ImGui::GetWindowWidth());
     xpManager.m_IsChangingHeaderPath = false;
-    if(ImGui::InputText("##Path", &xpManager.GetLastSelectedDirectory()) && xpManager.DoesPathExist(xpManager.GetLastSelectedDirectory()))
+    std::string* lastDirectory = &xpManager.GetLastSelectedDirectory();
+    if(ImGui::InputText("##Path", lastDirectory) && xpManager.DoesPathExist(xpManager.GetLastSelectedDirectory()))
     {
+        std::for_each(lastDirectory->begin(), lastDirectory->end(), [](char& value) { value = value == '/' ? '\\' : value; });
         xpManager.m_CurrentDirectoryPathNames = xpManager.ConvertPathToNames(xpManager.GetLastSelectedDirectory());
         xpManager.m_IsChangingHeaderPath = true;
     }
@@ -39,12 +41,12 @@ void DirectoryView::DisplayFilePath(XPloreManager& xpManager)
 
 static bool g_IsCtrlPressed = false;
 static bool g_IsShiftPressed = false;
-static int g_PreviousSelectedDirId = 0;
+static int g_PreviousSelectedDirId = -1;
 void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpView)
 {
-    // Calculate Formating
+    // Calculate Formatting
     int longestText = 200;
-    for(const Directory& directory : m_Directories)
+    for(const Item& directory : m_Items)
     {
         int length = (int)ImGui::CalcTextSize(directory.m_Name.c_str()).x;
         if(length >= longestText)
@@ -101,9 +103,9 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
 
     // Check for files in directory
     std::string source;
-    if(!m_Directories.empty())
+    if(!m_Items.empty())
     {
-        source = m_Directories[0].m_FullPath;
+        source = m_Items[0].m_FullPath;
         int id = source.find_last_of('\\');
         source.erase(id + 1);
     }
@@ -113,7 +115,8 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
 
     if(m_Refresh)
     {
-        m_Directories = xpManager.GetEntriesInDirectory(xpManager.GetLastSelectedDirectory());
+        m_Items = xpManager.GetEntriesInDirectory(xpManager.GetLastSelectedDirectory());
+        g_PreviousSelectedDirId = -1;
         m_Refresh = false;
     }
 
@@ -123,16 +126,17 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
         ImGui::Text("The current path does not exist");
         return;
     }
-    else if(m_Directories.empty() && !popUpView.m_CreateNew)
+    else if(m_Items.empty() && !popUpView.m_CreateNew)
     {
         ImGui::Text("There are no files inside the directory or the directory is compressed(.zip)");
         return;
     }
 
     int id = 0;
-    for(Directory& directory : m_Directories)
+    for(Item& item : m_Items)
     {
-        if(directory.m_IsFolder)
+        /*
+        if(item.m_IsFolder)
         {
             // "DEPRECATED" MAYBE IN THE FUTURE FOLDERS WILL BE DISPLAYED IN THE DIRECTORY WINDOW AS WELL
             // First part - Red
@@ -143,15 +147,16 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-            ImGui::Text(directory.m_Name.c_str());
+            ImGui::Text(item.m_Name.c_str());
             ImGui::PopStyleColor();
         }
         else
+         */
         {
             // File Renaming
             if(!popUpView.m_Sources.empty())
             {
-                if((popUpView.m_Sources[0].m_SourceName == directory.m_Name) && popUpView.m_Rename)
+                if((popUpView.m_Sources[0].m_SourceName == item.m_Name) && popUpView.m_Rename)
                 {
                     ImGui::SetKeyboardFocusHere();
                     ImGui::SetItemDefaultFocus();
@@ -187,21 +192,23 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             else if(ImGui::IsKeyReleased(ImGuiKey_LeftShift) || ImGui::IsKeyReleased(ImGuiKey_RightShift))
                 g_IsShiftPressed = false;
 
-            if(ImGui::ToggleSwitch(("##" + directory.m_Name).c_str(), &directory.m_IsFileSelected) && ImGui::IsWindowRectHovered())
+            if(ImGui::ToggleSwitch(("##" + item.m_Name).c_str(), &item.m_IsFileSelected))
             {
-                popUpView.m_Directories.insert(directory);
+                // Handle adding to operation queue
+                if(popUpView.IsCurrentOperationArea(OperationArea::DirectoryView))
+                    popUpView.AddToOperationQueue(item);
 
-                if(g_IsShiftPressed && ImGui::IsItemClicked())
+                if(g_IsShiftPressed && ImGui::IsItemClicked() && g_PreviousSelectedDirId != -1)
                 {
                     int subId = 0;
-                    for(Directory& dir : m_Directories)
+                    for(Item& dir : m_Items)
                     {
                         if(g_PreviousSelectedDirId < id)
                         {
                             if(subId >= g_PreviousSelectedDirId && subId <= id)
                                 dir.m_IsFileSelected = true;
                         }
-                        else
+                        else if(g_PreviousSelectedDirId > id)
                         {
                             if(subId >= id && subId <= g_PreviousSelectedDirId)
                                 dir.m_IsFileSelected = true;
@@ -210,21 +217,28 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
                     }
                 }
 
-                if(!g_IsCtrlPressed && !g_IsShiftPressed && ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowFocused())
+                if(!g_IsCtrlPressed && !g_IsShiftPressed && ImGui::IsMouseDown(ImGuiMouseButton_Left))
                 {
-                    for(Directory& dir : m_Directories)
+                    for(Item& dir : m_Items)
                     {
-                        if(dir.m_FullPath != directory.m_FullPath || !ImGui::IsItemHovered())
+                        if(dir.m_FullPath != item.m_FullPath || !ImGui::IsItemHovered())
                             dir.m_IsFileSelected = false;
                     }
+                    g_PreviousSelectedDirId = -1;
                 }
-                g_PreviousSelectedDirId = id;
+                else {
+                    g_PreviousSelectedDirId = id;
+                }
             }
 
+            // Mark operation area
+            if(ImGui::IsItemAnyButtonClicked())
+                popUpView.MarkOperationArea(OperationArea::DirectoryView);
+
             // Handle Right Click Manu
-            if(ImGui::IsItemClicked(ImGuiMouseButton_Right))
+            if(popUpView.IsCurrentOperationArea(OperationArea::DirectoryView) && ImGui::IsItemClicked(ImGuiMouseButton_Right))
             {
-                popUpView.m_Directories.insert(directory);
+                popUpView.AddToOperationQueue(item);
                 popUpView.m_IsOpen = true;
                 popUpView.m_NewFolder = false;
             }
@@ -232,33 +246,33 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             // Open Files
             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
             {
-                std::thread fileThread(&XPloreManager::LaunchFile, xpManager, directory);
+                std::thread fileThread(&XPloreManager::LaunchFile, xpManager, item);
                 fileThread.detach();
             }
 
             // Handling Name on the File with Color
             ImGui::SameLine();
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(.9f, .9f, .9f, .9f));
-            ImGui::Text(ICON_FA_FILE);
+            ImGui::PushStyleColor(ImGuiCol_Text, item.m_IsFolder ? ImVec4(255.0f / 255.0f, 217.0f / 255.0f, 112.0f / 255.0f, 1.0f) : ImVec4(.9f, .9f, .9f, .9f));
+            ImGui::Text(item.m_IsFolder ? ICON_FA_FOLDER : ICON_FA_FILE);
             ImGui::PopStyleColor();
 
             ImGui::SameLine();
 
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-            ImGui::Text(directory.m_Name.c_str());
+            ImGui::Text(item.m_Name.c_str());
             ImGui::PopStyleColor();
 
             // Handle Date
             ImGui::SameLine();
             ImGui::SetCursorPosX(0);
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (float)longestText + 100);
-            ImGui::Text(directory.m_DateLastModified.c_str());
+            ImGui::Text(item.m_DateLastModified.c_str());
 
             // Handle Size
             ImGui::SameLine();
-            int bytes = directory.m_FileSize;
+            int bytes = item.m_FileSize;
             std::string type = "b";
-            xpManager.ScaleFileSizes(directory.m_FileSize, bytes, type);
+            xpManager.ScaleFileSizes(item.m_FileSize, bytes, type);
 
             ImGui::SetCursorPosX(0);
             if(bytes <= -1)

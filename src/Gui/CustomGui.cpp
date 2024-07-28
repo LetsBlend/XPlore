@@ -6,6 +6,13 @@
 
 namespace ImGui
 {
+    bool IsItemAnyButtonClicked()
+    {
+        if(ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Middle) || ImGui::IsItemClicked(ImGuiMouseButton_Right))
+            return true;
+        return false;
+    }
+
     bool ToggleSwitch(const char *label, bool *v)
     {
         ImDrawList* draw_list = ImGui::GetWindowDrawList();

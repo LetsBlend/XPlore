@@ -7,11 +7,91 @@
 #include "PopUpView.h"
 
 #include "Gui/Gui.h"
+#include "Gui/CustomGui.h"
 #include "Util/Fonts.h"
+
+// For getting the RecycleBin
+#include <shlobj.h>
+#include <shlwapi.h>
+
+#pragma comment(lib, "Shlwapi.lib")
+
+HRESULT BindToCsidl(int csidl, REFIID riid, void **ppv)
+{
+    HRESULT hr;
+    PIDLIST_ABSOLUTE pidl;
+    hr = SHGetSpecialFolderLocation(NULL, csidl, &pidl);
+    if (SUCCEEDED(hr)) {
+        IShellFolder *psfDesktop;
+        hr = SHGetDesktopFolder(&psfDesktop);
+        if (SUCCEEDED(hr)) {
+            if (pidl->mkid.cb) {
+                hr = psfDesktop->BindToObject(pidl, NULL, riid, ppv);
+            } else {
+                hr = psfDesktop->QueryInterface(riid, ppv);
+            }
+            psfDesktop->Release();
+        }
+        CoTaskMemFree(pidl);
+    }
+    return hr;
+}
+
+void PrintDisplayName(IShellFolder *psf, PCUITEMID_CHILD pidl, SHGDNF uFlags, PCTSTR pszLabel)
+{
+    STRRET sr;
+    HRESULT hr = psf->GetDisplayNameOf(pidl, uFlags, &sr);
+    if (SUCCEEDED(hr)) {
+        PTSTR pszName;
+        hr = StrRetToStr(&sr, pidl, &pszName);
+        if (SUCCEEDED(hr)) {
+            ImGui::Text(pszName);
+        }
+    }
+}
 
 static bool g_IsCtrlPressed = false;
 static bool g_IsShiftPressed = false;
-void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPloreManager& xpManager, PopUpView& popUpView, int currentNameIndex, int startFlag)
+bool HirarchyView::DisplayRecycleBin(bool& toggled, XPloreManager& xpManager)
+{
+    int flag = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_AllowItemOverlap;
+
+    // Check if we have selected Folder
+    for (const std::string &currentDirectory : xpManager.m_CurrentDirectoryPaths)
+    {
+        if (currentDirectory == "$:\\Recycle.Bin")
+            flag |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    // Normal/Ctrl/Shift selecting files
+    if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
+        g_IsCtrlPressed = true;
+    else if (ImGui::IsKeyReleased(ImGuiKey_LeftCtrl) || ImGui::IsKeyReleased(ImGuiKey_RightCtrl))
+        g_IsCtrlPressed = false;
+
+    if (ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift))
+        g_IsShiftPressed = true;
+    else if (ImGui::IsKeyReleased(ImGuiKey_LeftShift) || ImGui::IsKeyReleased(ImGuiKey_RightShift))
+        g_IsShiftPressed = false;
+
+    if(ImGui::TreeNodeEx("##treenode", flag))
+    {
+        xpManager.m_CurrentDirectoryPaths.push_back("$:\\Recycle.Bin");
+        ImGui::TreePop();
+    }
+
+    // Display Folder Names
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255.0f / 255.0f, 217.0f / 255.0f, 112.0f / 255.0f, 1.0f));
+    ImGui::SameLine();
+    ImGui::Text(ICON_FA_FOLDER);
+    ImGui::PopStyleColor();
+    ImGui::SameLine();
+    ImGui::Text("Recycle Bin");
+
+    return false;
+}
+
+void HirarchyView::DisplayHirarchy(bool& itemClicked, Item& directory, XPloreManager& xpManager, PopUpView& popUpView, int currentNameIndex, int startFlag)
 {
     // Return if it's a file
     if(!directory.m_IsFolder)
@@ -28,7 +108,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
     // If Folder contains no Folders
     if (directory.m_Children.empty())
         flag |= ImGuiTreeNodeFlags_Leaf;
-    
+
     // Check if we have selected Folder
     bool selected = false;
     for (const std::string &currentDirectory : xpManager.m_CurrentDirectoryPaths)
@@ -37,10 +117,10 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
         {
             flag |= ImGuiTreeNodeFlags_Selected;
             selected = true;
-            if(ImGui::IsWindowRectHovered() && !directory.m_IsParentSelected)
-                popUpView.m_Directories.insert(directory);
+            if(popUpView.IsCurrentOperationArea(OperationArea::HirarchyView) && !directory.m_IsParentSelected)
+                popUpView.AddToOperationQueue(directory);
 
-            for(Directory& children : directory.m_Children)
+            for(Item& children : directory.m_Children)
                 children.m_IsParentSelected = true;
         }
     }
@@ -48,7 +128,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
     // Handle Selecting child while Parent is already selected
     if(directory.m_IsParentSelected)
     {
-        for(Directory& children : directory.m_Children)
+        for(Item& children : directory.m_Children)
             children.m_IsParentSelected = true;
     }
 
@@ -103,6 +183,11 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
         g_IsShiftPressed = false;
 
     bool opened = ImGui::TreeNodeEx(("##" + directory.m_Name).c_str(), flag | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+    // Mark operation area
+    if(ImGui::IsItemAnyButtonClicked())
+        popUpView.MarkOperationArea(OperationArea::HirarchyView);
+
     if (ImGui::IsItemClicked())
     {
         // Clear if not shift or ctrl pressing
@@ -116,7 +201,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
             int id = 0;
             int prevID = 0;
             int currentID = 0;
-            for (const Directory& drNode : directory.m_Parent->m_Children)
+            for (const Item& drNode : directory.m_Parent->m_Children)
             {
                 if(drNode.m_FullPath == xpManager.m_CurrentDirectoryPaths[xpManager.m_CurrentDirectoryPaths.size() - 1])
                     prevID = id;
@@ -205,7 +290,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Directory& directory, XPlo
     // Next Node
     if (opened)
     {
-        for (Directory& drNode : directory.m_Children)
+        for (Item& drNode : directory.m_Children)
             DisplayHirarchy(itemClicked, drNode, xpManager, popUpView, currentNameIndex, startFlag);
 
         ImGui::TreePop();

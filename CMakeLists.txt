@@ -40,4 +40,4 @@ add_executable(XPlore src/main.cpp
         src/Gui/GuiDocking.cpp)
 
 target_precompile_headers(XPlore PRIVATE src/pch.h)
-target_link_libraries(XPlore PRIVATE glfw glad imgui)
+target_link_libraries(XPlore PRIVATE glfw glad imgui Shlwapi.lib)

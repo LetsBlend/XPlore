@@ -10,9 +10,18 @@
 class DirectoryView;
 class HirarchyView;
 
+enum class OperationArea
+{
+    HirarchyView,
+    DirectoryView
+};
+
 class PopUpView
 {
 public:
+    void AddToOperationQueue(const Item& item);
+    void MarkOperationArea(OperationArea opArea);
+    bool IsCurrentOperationArea(OperationArea opArea);
     void DisplayPopUp(XPloreManager& xpManager, HirarchyView& hirarchyView, DirectoryView& directoryView);
 
     bool m_IsOpen = false;
@@ -21,9 +30,11 @@ public:
     bool m_NewFolder = false;
     std::string m_NewName;
 
-    std::unordered_set<Directory> m_Directories;
+    std::mutex m_ItemLock;
+    std::unordered_set<Item> m_Items;
     std::vector<Source> m_Sources;
     PasteOptions m_PasteOptions;
+    OperationArea m_OpArea;
 };
 
 

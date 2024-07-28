@@ -15,6 +15,7 @@
 #include <future>
 #include <utility>
 #include <chrono>
+#include <ranges>
 using namespace std::chrono_literals;
 
 #include <string>

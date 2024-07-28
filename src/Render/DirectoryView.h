@@ -5,7 +5,7 @@
 #ifndef XPLORE_DIRECTORYVIEW_H
 #define XPLORE_DIRECTORYVIEW_H
 
-class Directory;
+class Item;
 class XPloreManager;
 class PopUpView;
 
@@ -14,10 +14,10 @@ class DirectoryView
 public:
     void DisplayLoadingCircle();
     void DisplayLoadingBar();
-    void DisplayFilePath(XPloreManager& xpManager);
+    void DisplayFilePath(XPloreManager& value);
     void DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpView);
 
-    std::vector<Directory> m_Directories;
+    std::vector<Item> m_Items;
     bool m_Refresh;
     std::atomic<bool> m_Processing;
 };
