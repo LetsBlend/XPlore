@@ -231,7 +231,7 @@ void HirarchyView::DisplayHirarchy(bool& itemClicked, Item& directory, XPloreMan
             xpManager.m_CurrentDirectoryPaths.clear();
         if(std::count(xpManager.m_CurrentDirectoryPaths.begin(), xpManager.m_CurrentDirectoryPaths.end(), directory.m_FullPath) == 0)
             xpManager.m_CurrentDirectoryPaths.push_back(directory.m_FullPath);
-        popUpView.m_IsOpen = true;
+        popUpView.m_OpenUp = true;
         popUpView.m_NewFolder = true;
         itemClicked = true;
     }

@@ -7,7 +7,7 @@
 
 class GLFWwindow;
 
-class Window
+class Window : Input
 {
 public:
     Window();

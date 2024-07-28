@@ -39,6 +39,9 @@ void Application::Update(Window& window, Gui& gui)
         m_DirectoryView.m_Refresh = true;
     }
 
+    if(Input::GetKey(KeyCode::LControl) && Input::GetKeyDown(KeyCode::Z))
+        m_XPManager.TriggerUndo();
+
     // Render
     ExampleWindow();
 

@@ -97,7 +97,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
     // Handle Right Click Menu when not hovering Item
     if(ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
-        popUpView.m_IsOpen = true;
+        popUpView.m_OpenUp = true;
         popUpView.m_NewFolder = false;
     }
 
@@ -201,28 +201,28 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
                 if(g_IsShiftPressed && ImGui::IsItemClicked() && g_PreviousSelectedDirId != -1)
                 {
                     int subId = 0;
-                    for(Item& dir : m_Items)
+                    for(Item& item1 : m_Items)
                     {
                         if(g_PreviousSelectedDirId < id)
                         {
                             if(subId >= g_PreviousSelectedDirId && subId <= id)
-                                dir.m_IsFileSelected = true;
+                                item1.m_IsFileSelected = true;
                         }
                         else if(g_PreviousSelectedDirId > id)
                         {
                             if(subId >= id && subId <= g_PreviousSelectedDirId)
-                                dir.m_IsFileSelected = true;
+                                item1.m_IsFileSelected = true;
                         }
                         subId++;
                     }
                 }
 
-                if(!g_IsCtrlPressed && !g_IsShiftPressed && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                if(!g_IsCtrlPressed && !g_IsShiftPressed && ImGui::IsMouseDown(ImGuiMouseButton_Left) && !popUpView.m_IsOpen)
                 {
-                    for(Item& dir : m_Items)
+                    for(Item& item1 : m_Items)
                     {
-                        if(dir.m_FullPath != item.m_FullPath || !ImGui::IsItemHovered())
-                            dir.m_IsFileSelected = false;
+                        if(item1.m_FullPath != item.m_FullPath || !ImGui::IsItemHovered())
+                            item1.m_IsFileSelected = false;
                     }
                     g_PreviousSelectedDirId = -1;
                 }
@@ -239,7 +239,7 @@ void DirectoryView::DisplayDirectory(XPloreManager& xpManager, PopUpView& popUpV
             if(popUpView.IsCurrentOperationArea(OperationArea::DirectoryView) && ImGui::IsItemClicked(ImGuiMouseButton_Right))
             {
                 popUpView.AddToOperationQueue(item);
-                popUpView.m_IsOpen = true;
+                popUpView.m_OpenUp = true;
                 popUpView.m_NewFolder = false;
             }
 

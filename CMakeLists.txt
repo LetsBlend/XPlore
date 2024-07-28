@@ -37,7 +37,9 @@ add_executable(XPlore src/main.cpp
         src/Debug/Timer.h
         src/Util/unique_vector.cpp
         src/Util/unique_vector.h
-        src/Gui/GuiDocking.cpp)
+        src/Gui/GuiDocking.cpp
+        src/Events/Input.h
+        src/Events/Input.cpp)
 
 target_precompile_headers(XPlore PRIVATE src/pch.h)
 target_link_libraries(XPlore PRIVATE glfw glad imgui Shlwapi.lib)

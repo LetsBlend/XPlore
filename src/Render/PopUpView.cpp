@@ -46,19 +46,19 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
     }
 
     // Begin Right Click PopUp
-    if (m_IsOpen)
+    if (m_OpenUp)
     {
         ImGui::OpenPopup("PopUp");
-        m_IsOpen = false;
+        m_OpenUp = false;
     }
 
     bool sameFile = false;
     //bool permaDelete = false;
+    m_IsOpen = false;
     if (ImGui::BeginPopup("PopUp"))
     {
+        m_IsOpen = true;
         Debug::Info(std::to_string(m_Items.size()));
-        for (const Item &item: m_Items)
-            Debug::Info(item.m_Name);
         //Debug::Info(std::to_string(m_Sources.size()));
 
         if (ImGui::Selectable("New"))
@@ -104,7 +104,8 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         {
             for (const Item &item: m_Items)
             {
-                g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&](Item item)
+                {
                     directoryView.m_Processing = true;
                     if (item.m_IsFolder)
                     {
@@ -122,7 +123,7 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
                     }
                     directoryView.m_Refresh = true;
                     hirarchyView.m_Refresh = true;
-                }));
+                }, item));
             }
         }
         if (ImGui::Selectable("Cut"))
@@ -139,24 +140,13 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         }
         if (ImGui::Selectable("Paste"))
         {
-            for (Source& m_Source : m_Sources)
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&]
             {
-                struct stat fileStatus;
-                std::string newStr = xpManager.GetLastSelectedDirectory();
-                newStr += "\\" + m_Source.m_SourceName;
-                if (stat(newStr.c_str(), &fileStatus) >= 0)
-                    sameFile = true;
-            }
-
-            if (!sameFile)
-            {
-                g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                    directoryView.m_Processing = true;
-                    xpManager.PasteFiles(m_PasteOptions, xpManager.GetLastSelectedDirectory());
-                    directoryView.m_Refresh = true;
-                    hirarchyView.m_Refresh = true;
-                }));
-            }
+                directoryView.m_Processing = true;
+                xpManager.PasteFiles(m_PasteOptions, xpManager.GetLastSelectedDirectory());
+                directoryView.m_Refresh = true;
+                hirarchyView.m_Refresh = true;
+            }));
         }
         if (ImGui::Selectable("Rename"))
         {
@@ -176,18 +166,21 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
         {
             directoryView.m_Processing = true;
 
-            for (const Item &item : m_Items)
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&](std::unordered_set<Item> items)
             {
-                g_AsyncOperation.push_back(std::async(std::launch::async, [&] {
-                    xpManager.Restore(item);
-                    directoryView.m_Refresh = true;
-                }));
-            }
+                xpManager.Restore(items);
+                directoryView.m_Refresh = true;
+            }, m_Items));
         }
         if(xpManager.GetLastSelectedDirectory() == xpManager.GetCurrentDisk() + "Recycle.Bin\\")
         {
             if (ImGui::Selectable("Empty"))
-                xpManager.EmptyRecycleBin();
+            {
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&] {
+                    xpManager.EmptyRecycleBin();
+                }));
+                directoryView.m_Refresh = true;
+            }
         }
         else
         {
@@ -195,36 +188,30 @@ void PopUpView::DisplayPopUp(XPloreManager &xpManager, HirarchyView &hirarchyVie
             {
                 directoryView.m_Processing = true;
 
-                for (const Item &item: m_Items)
+                g_AsyncOperation.push_back(std::async(std::launch::async, [&](std::unordered_set<Item> items)
                 {
-                    g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                        xpManager.Delete(true, item, xpManager);
-                        directoryView.m_Refresh = true;
-                        hirarchyView.m_Refresh = true;
-                    }));
-                }
+                    xpManager.Delete(true, items, xpManager);
+                    directoryView.m_Refresh = true;
+                    hirarchyView.m_Refresh = true;
+                }, m_Items));
             }
         }
         if (ImGui::Selectable("Permanently Delete"))
         {
             directoryView.m_Processing = true;
 
-            for (const Item &item: m_Items)
+            g_AsyncOperation.push_back(std::async(std::launch::async, [&](std::unordered_set<Item> items)
             {
-                g_AsyncOperation.push_back(std::async(std::launch::async, [&]() {
-                    if(xpManager.GetLastSelectedDirectory() == xpManager.GetCurrentDisk() + "Recycle.Bin\\")
-                        xpManager.DeleteFromRecycleBin(item);
-                    else
-                        xpManager.Delete(false, item, xpManager);
-                    directoryView.m_Refresh = true;
-                    hirarchyView.m_Refresh = true;
-                }));
-            }
+                if (xpManager.GetLastSelectedDirectory() == xpManager.GetCurrentDisk() + "Recycle.Bin\\")
+                        xpManager.DeleteFromRecycleBin(items);
+                else
+                    xpManager.Delete(false, items, xpManager);
+                directoryView.m_Refresh = true;
+                hirarchyView.m_Refresh = true;
+            }, m_Items));
         }
 
-        m_ItemLock.lock();
         m_Items.clear();
-        m_ItemLock.unlock();
         ImGui::End();
     }
 

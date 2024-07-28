@@ -26,6 +26,8 @@ Window::Window()
     glfwSwapInterval(0);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+
+    Init(m_Window);
 }
 
 Window::~Window()
@@ -36,6 +38,7 @@ Window::~Window()
 
 void Window::PollEvents(bool& running)
 {
+    Update();
     glfwPollEvents();
 
     if(glfwWindowShouldClose(m_Window))

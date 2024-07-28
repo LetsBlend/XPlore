@@ -67,21 +67,23 @@ public:
     std::vector<std::string> ConvertPathToNames(const std::string& fullPath);
 
     std::string GetCurrentDisk();
-    void RecycleBinIterator(std::function<void(IShellFolder2* pRecycleBinFolder, LPITEMIDLIST& pidlItem)> func);
+    void RecycleBinIterator(std::function<void(IShellFolder2* pRecycleBinFolder, LPITEMIDLIST& pidlItem)> update, std::function<void(IShellFolder2 *pRecycleBinFolder)> postUpdate);
     bool ItemSelected(const Item& item, IShellFolder2* pRecycleBinFolder, LPITEMIDLIST& pidlItem);
     std::vector<Item> GetEntriesInDirectory(const std::string& folderPath);
     std::string& GetLastSelectedDirectory();
 
-    void LaunchFile(const Item& file);
+    void LaunchFile(Item file);
     std::string RenameItem(std::string& filePath, const std::string& newName);
     void AddItemsToClipBoard(const std::unordered_set<Item>& items, int clipBoardFlag);
     std::vector<Source> GetItemFromClipBoard();
-    void PasteFiles(const PasteOptions &pasteOptons, const std::string &dest);
-    void Restore(Item item);
+    void PasteFiles(PasteOptions pasteOptons, std::string dest);
+    void Restore(const std::unordered_set<Item>& item);
 
-    void Delete(bool allowUndo, const Item& item, XPloreManager& xpManager);
+    void Delete(bool allowUndo, const std::unordered_set<Item>& items, XPloreManager& xpManager);
     void EmptyRecycleBin();
-    void DeleteFromRecycleBin(const Item& item);
+    void DeleteFromRecycleBin(const std::unordered_set<Item> &items);
+
+    void TriggerUndo();
 
     std::vector<std::string> m_CurrentDirectoryPaths{1, "C:\\"};
     std::vector<std::string> m_CurrentDirectoryPathNames{1};

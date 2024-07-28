@@ -22,15 +22,16 @@ public:
     void AddToOperationQueue(const Item& item);
     void MarkOperationArea(OperationArea opArea);
     bool IsCurrentOperationArea(OperationArea opArea);
-    void DisplayPopUp(XPloreManager& xpManager, HirarchyView& hirarchyView, DirectoryView& directoryView);
 
+    void DisplayPopUp(XPloreManager& items, HirarchyView& hirarchyView, DirectoryView& directoryView);
+
+    bool m_OpenUp = false;
     bool m_IsOpen = false;
     bool m_Rename = false;
     bool m_CreateNew = false;
     bool m_NewFolder = false;
     std::string m_NewName;
 
-    std::mutex m_ItemLock;
     std::unordered_set<Item> m_Items;
     std::vector<Source> m_Sources;
     PasteOptions m_PasteOptions;

@@ -125,7 +125,7 @@ const SHCOLUMNID SCID_DateDeleted =
         {PSGUID_DISPLACED, PID_DISPLACED_DATE};
 
 void
-XPloreManager::RecycleBinIterator(std::function<void(IShellFolder2 *pRecycleBinFolder, LPITEMIDLIST &pidlItem)> func)
+XPloreManager::RecycleBinIterator(std::function<void(IShellFolder2 *pRecycleBinFolder, LPITEMIDLIST &pidlItem)> update, std::function<void(IShellFolder2 *pRecycleBinFolder)> postUpdate)
 {
     CoInitialize(NULL);
 
@@ -163,11 +163,17 @@ XPloreManager::RecycleBinIterator(std::function<void(IShellFolder2 *pRecycleBinF
         return;
     }
 
-    LPITEMIDLIST pidlItem = nullptr;
-    while (pEnumIDList->Next(1, &pidlItem, NULL) == S_OK)
+    if(update != nullptr)
     {
-        func(pRecycleBinFolder, pidlItem);
+        LPITEMIDLIST pidlItem = nullptr;
+        while (pEnumIDList->Next(1, &pidlItem, NULL) == S_OK)
+        {
+            update(pRecycleBinFolder, pidlItem);
+        }
     }
+
+    if(postUpdate != nullptr)
+        postUpdate(pRecycleBinFolder);
 
     pEnumIDList->Release();
     pRecycleBinFolder->Release();
@@ -219,61 +225,61 @@ std::vector<Item> XPloreManager::GetEntriesInDirectory(const std::string &folder
     if (folderPath == GetCurrentDisk() + "Recycle.Bin\\")
     {
         RecycleBinIterator([&](IShellFolder2 *pRecycleBinFolder, LPITEMIDLIST &pidlItem)
-                           {
-                               STRRET strRet;
-                               if (SUCCEEDED(pRecycleBinFolder->GetDisplayNameOf(pidlItem, SHGDN_NORMAL, &strRet)))
-                               {
-                                   CHAR szDisplayName[MAX_PATH];
-                                   if (StrRetToBufA(&strRet, pidlItem, szDisplayName, MAX_PATH) == S_OK)
-                                   {
-                                       std::string name = szDisplayName;
-                                       int id = name.find_last_of('\\');
-                                       name.erase(0, id + 1);
+       {
+           STRRET strRet;
+           if (SUCCEEDED(pRecycleBinFolder->GetDisplayNameOf(pidlItem, SHGDN_NORMAL, &strRet)))
+           {
+               CHAR szDisplayName[MAX_PATH];
+               if (StrRetToBufA(&strRet, pidlItem, szDisplayName, MAX_PATH) == S_OK)
+               {
+                   std::string name = szDisplayName;
+                   int id = name.find_last_of('\\');
+                   name.erase(0, id + 1);
 
-                                       Item dir;
-                                       // Get date last modified
-                                       VARIANT ft;
-                                       if (SUCCEEDED(pRecycleBinFolder->GetDetailsEx(pidlItem, &SCID_DateDeleted, &ft)))
-                                       {
-                                           DATE lastModified = ft.date;
-                                           SYSTEMTIME sysTime;
-                                           VariantTimeToSystemTime(lastModified,
-                                                                   &sysTime); // Convert OLE Automation date to SYSTEMTIME
-                                           char buffer[256];
-                                           GetDateFormatA(LOCALE_USER_DEFAULT, 0, &sysTime, "yyyy-MM-dd", buffer,
-                                                          sizeof(buffer)); // Example date format
-                                           dir.m_DateLastModified = buffer;
-                                           dir.m_DateLastModified.append(" ");
-                                           GetTimeFormatA(LOCALE_USER_DEFAULT, 0, &sysTime, "HH:mm:ss", buffer,
-                                                          sizeof(buffer)); // Time format
-                                           dir.m_DateLastModified += buffer;
-                                       }
+                   Item dir;
+                   // Get date last modified
+                   VARIANT ft;
+                   if (SUCCEEDED(pRecycleBinFolder->GetDetailsEx(pidlItem, &SCID_DateDeleted, &ft)))
+                   {
+                       DATE lastModified = ft.date;
+                       SYSTEMTIME sysTime;
+                       VariantTimeToSystemTime(lastModified,
+                                               &sysTime); // Convert OLE Automation date to SYSTEMTIME
+                       char buffer[256];
+                       GetDateFormatA(LOCALE_USER_DEFAULT, 0, &sysTime, "yyyy-MM-dd", buffer,
+                                      sizeof(buffer)); // Example date format
+                       dir.m_DateLastModified = buffer;
+                       dir.m_DateLastModified.append(" ");
+                       GetTimeFormatA(LOCALE_USER_DEFAULT, 0, &sysTime, "HH:mm:ss", buffer,
+                                      sizeof(buffer)); // Time format
+                       dir.m_DateLastModified += buffer;
+                   }
 
-                                       // Determine if it's a folder
-                                       IShellFolder *pParentFolder;
-                                       LPCITEMIDLIST pidlChild = pidlItem;
-                                       if (SUCCEEDED(
-                                               SHBindToParent(pidlChild, IID_IShellFolder, (void **) &pParentFolder,
-                                                              &pidlChild)))
-                                       {
-                                           ULONG attribs = SFGAO_FOLDER;
-                                           if (SUCCEEDED(pParentFolder->GetAttributesOf(1, &pidlChild, &attribs)))
-                                           {
-                                               dir.m_IsFolder = (attribs & SFGAO_FOLDER) != 0;
-                                           }
-                                       }
+                   // Determine if it's a folder
+                   IShellFolder *pParentFolder;
+                   LPCITEMIDLIST pidlChild = pidlItem;
+                   if (SUCCEEDED(
+                           SHBindToParent(pidlChild, IID_IShellFolder, (void **) &pParentFolder,
+                                          &pidlChild)))
+                   {
+                       ULONG attribs = SFGAO_FOLDER;
+                       if (SUCCEEDED(pParentFolder->GetAttributesOf(1, &pidlChild, &attribs)))
+                       {
+                           dir.m_IsFolder = (attribs & SFGAO_FOLDER) != 0;
+                       }
+                   }
 
-                                       // Get file size
-                                       dir.m_FileSize = -1;
+                   // Get file size
+                   dir.m_FileSize = -1;
 
-                                       dir.m_FullPath = GetCurrentDisk() + "Recycle.Bin\\" + name;
-                                       dir.m_Name = name;
-                                       directories.push_back(dir);
-                                   }
-                               }
+                   dir.m_FullPath = GetCurrentDisk() + "Recycle.Bin\\" + name;
+                   dir.m_Name = name;
+                   directories.push_back(dir);
+               }
+           }
 
-                               CoTaskMemFree(pidlItem);
-                           });
+           CoTaskMemFree(pidlItem);
+       }, nullptr);
         return directories;
     }
 
@@ -353,7 +359,7 @@ std::vector<std::string> XPloreManager::ConvertPathToNames(const std::string &fu
     return names;
 }
 
-void XPloreManager::LaunchFile(const Item &file)
+void XPloreManager::LaunchFile(Item file)
 {
     int result = system(("\"" + file.m_FullPath + "\"").c_str());
     if(result == -1)
@@ -555,72 +561,81 @@ std::vector<Source> XPloreManager::GetItemFromClipBoard()
     return sources;
 }
 
-void XPloreManager::PasteFiles(const PasteOptions &pasteOptons, const std::string &dest)
+void XPloreManager::PasteFiles(PasteOptions pasteOptons, std::string dest)
 {
     std::vector<Source> sources = GetItemFromClipBoard();
 
-    for (Source &source: sources)
+    std::string source;
+    for(const Source& src : sources)
+        source += src.m_SourcePath + '\0';
+
+    // pFrom and pTo must be double null terminated
+    source += '\0';
+    dest += '\0';
+
+    Debug::Info(source);
+    Debug::Info(dest);
+
+    SHFILEOPSTRUCTA fileOp = {0};
+    fileOp.hwnd = NULL; // Handle to the parent window of the progress dialog box
+    fileOp.wFunc = pasteOptons & PasteOptions::Copy ?  FO_COPY : FO_MOVE; // Operation to be performed
+    fileOp.pFrom = source.c_str(); // Source file path
+    fileOp.pTo = dest.c_str(); // Destination file path
+    fileOp.fFlags = FOF_NOCONFIRMMKDIR | FOF_ALLOWUNDO | FOF_SILENT | FOF_NOERRORUI; // Flags to control the operation
+
+    int result = SHFileOperation(&fileOp);
+    if (result != 0)
+        Debug::Error("Failed to copy item with error code:", result);
+    /* OLD CODE
+
+for (Source &source: sources)
+{
+
+
+
+    // Remove or Rename if file already exists
+    int duplicates = 0;
+    for(;;)
     {
-        std::string destination = dest;
-        if(!std::filesystem::is_directory(source.m_SourcePath))
-            destination += source.m_SourceName;
-        // pFrom and pTo must be double null terminated
-        destination += '\0';
-        source.m_SourcePath += '\0';
+        if(!std::filesystem::exists(destination))
+            break;
+        if(!(pasteOptons & PasteOptions::Duplicate))
+            break;
 
-        Debug::Info(source.m_SourcePath);
-        Debug::Info(destination);
+        destination = dest + source.m_SourceName + "-Duplicate(" + toString(duplicates) + ")";
+        if(!std::filesystem::exists(destination))
+            break;
 
-        SHFILEOPSTRUCTA fileOp = {0};
-        fileOp.hwnd = NULL; // Handle to the parent window of the progress dialog box
-        fileOp.wFunc = pasteOptons & PasteOptions::Copy ?  FO_COPY : FO_MOVE; // Operation to be performed
-        fileOp.pFrom = source.m_SourcePath.c_str(); // Source file path
-        fileOp.pTo = destination.c_str(); // Destination file path
-        fileOp.fFlags = FOF_NOCONFIRMMKDIR | FOF_SILENT | FOF_ALLOWUNDO; // Flags to control the operation
-
-        int result = SHFileOperation(&fileOp);
-        if (result != 0)
-            Debug::Error("Failed to copy item with error code:", result);
-
-        /* OLD CODE
-
-        // Remove or Rename if file already exists
-        int duplicates = 0;
-        for(;;)
-        {
-            if(!std::filesystem::exists(destination))
-                break;
-            if(!(pasteOptons & PasteOptions::Duplicate))
-                break;
-
-            destination = dest + source.m_SourceName + "-Duplicate(" + toString(duplicates) + ")";
-            if(!std::filesystem::exists(destination))
-                break;
-
-            duplicates++;
-        }
-        if (std::filesystem::is_directory(source.m_SourcePath))
-        {
-            if (pasteOptons & PasteOptions::Copy)
-                system(("robocopy " + source.m_SourcePath + " " + destination + " /e").c_str());
-            else
-                system(("robocopy " + source.m_SourcePath + " " + destination + " /e /move").c_str());
-        }
-        else
-        {
-            system(("copy \"" + source.m_SourcePath + "\" \"" + destination + "\"").c_str());
-            if (pasteOptons & PasteOptions::Cut)
-                system(("del \"" + source.m_SourcePath + "\" /s /q").c_str());
-        }
-         */
+        duplicates++;
     }
+    if (std::filesystem::is_directory(source.m_SourcePath))
+    {
+        if (pasteOptons & PasteOptions::Copy)
+            system(("robocopy " + source.m_SourcePath + " " + destination + " /e").c_str());
+        else
+            system(("robocopy " + source.m_SourcePath + " " + destination + " /e /move").c_str());
+    }
+    else
+    {
+        system(("copy \"" + source.m_SourcePath + "\" \"" + destination + "\"").c_str());
+        if (pasteOptons & PasteOptions::Cut)
+            system(("del \"" + source.m_SourcePath + "\" /s /q").c_str());
+    }
+    }
+     */
+
 }
 
-void XPloreManager::Delete(bool allowUndo, const Item &item, XPloreManager &xpManager)
+void XPloreManager::Delete(bool allowUndo, const std::unordered_set<Item>& items, XPloreManager &xpManager)
 {
-    std::string deletePath = item.m_FullPath;
-    if (deletePath.ends_with('\\'))
-        deletePath.pop_back();
+    std::string deletePath;
+    for(const Item& item : items)
+    {
+        deletePath += item.m_FullPath;
+        if (deletePath.ends_with('\\'))
+            deletePath.pop_back();
+        deletePath += '\0';
+    }
     deletePath += '\0';
 
     Debug::Info(deletePath);
@@ -629,7 +644,7 @@ void XPloreManager::Delete(bool allowUndo, const Item &item, XPloreManager &xpMa
     fileOp.wFunc = FO_DELETE;
     fileOp.pFrom = deletePath.c_str();
     fileOp.pTo = NULL;
-    fileOp.fFlags = FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
+    fileOp.fFlags = FOF_NOERRORUI | FOF_NOCONFIRMATION;
     if(allowUndo)
         fileOp.fFlags |= FOF_ALLOWUNDO; // Allows for undo
     else
@@ -637,104 +652,120 @@ void XPloreManager::Delete(bool allowUndo, const Item &item, XPloreManager &xpMa
     int result = SHFileOperationA(&fileOp);
 
     if (result != 0)
+    {
         Debug::Error("Failed to delete file: " + toString(result));
+        return;
+    }
 
-    int id = deletePath.find_last_of('\\');
+    int id = deletePath.find_first_of('\0');
+    deletePath.erase(id);
+    id = deletePath.find_last_of('\\');
     deletePath.erase(id);
     xpManager.GetLastSelectedDirectory() = deletePath;
 }
 
-void XPloreManager::DeleteFromRecycleBin(const Item &item)
+void XPloreManager::DeleteFromRecycleBin(const std::unordered_set<Item> &items)
 {
-    RecycleBinIterator([&](IShellFolder2 *pRecycleBinFolder, LPITEMIDLIST &pidlItem)
-                       {
-                           if (ItemSelected(item, pRecycleBinFolder, pidlItem))
-                           {
-                               IContextMenu *pContextMenu = NULL;
-                               if (SUCCEEDED(pRecycleBinFolder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST *) &pidlItem, IID_IContextMenu, NULL, (void **) &pContextMenu)))
-                               {
-                                   HMENU hMenu = CreatePopupMenu();
-                                   if (hMenu)
-                                   {
-                                       if (SUCCEEDED(pContextMenu->QueryContextMenu(hMenu, 0, 1, 0x7FFF, CMF_DEFAULTONLY)))
-                                       {
-                                           CMINVOKECOMMANDINFOEX cmd = {0};
-                                           cmd.cbSize = sizeof(CMINVOKECOMMANDINFOEX);
-                                           cmd.fMask = CMIC_MASK_UNICODE;
-                                           cmd.hwnd = NULL;
-                                           cmd.lpVerb = "delete";
-                                           cmd.lpVerbW = L"delete";
-                                           cmd.nShow = SW_SHOWNORMAL;
-                                           if (FAILED(pContextMenu->InvokeCommand((LPCMINVOKECOMMANDINFO) &cmd)))
-                                               Debug::Error("Failed to restore file");
-                                       }
-                                       DestroyMenu(hMenu);
-                                   }
-                                   pContextMenu->Release();
-                               }
-                           }
-                        /*
-                           std::string selectedItem = ItemSelected(item, pRecycleBinFolder, pidlItem);
+    std::vector<LPITEMIDLIST> pidlItems;
 
-                           int id = selectedItem.find_last_of('\\');
-                           selectedItem.erase(0, id + 1);
-                           if (!selectedItem.empty())
-                           {
-                               int result = 0;
-                               for (int i = 0; i < 5; i++)
-                               {
-                                   SHFILEOPSTRUCTA fileOp = {0};
-                                   fileOp.hwnd = NULL;
-                                   fileOp.wFunc = FO_DELETE;
-                                   fileOp.pFrom = selectedItem.c_str();
-                                   fileOp.pTo = NULL;
-                                   fileOp.fFlags = FOF_NOERRORUI | FOF_NOCONFIRMATION | FOF_SILENT;
-                                   result = SHFileOperationA(&fileOp);
-                                   if (result == 0)
-                                       break;
-                               }
-                               if (result != 0)
-                                   Debug::Error("Failed to delete file: " + toString(result));
-                           }
-                           */
-                       });
+    RecycleBinIterator([&](IShellFolder2 *pRecycleBinFolder, LPITEMIDLIST &pidlItem)
+   {
+       for(const Item& item : items)
+       {
+           if (ItemSelected(item, pRecycleBinFolder, pidlItem))
+               pidlItems.push_back(pidlItem);
+       }
+   },
+   [&](IShellFolder2* pRecycleBinFolder)
+   {
+       if(pidlItems.empty())
+           return;
+
+       IContextMenu *pContextMenu = NULL;
+       if (SUCCEEDED(pRecycleBinFolder->GetUIObjectOf(NULL, pidlItems.size(), (LPCITEMIDLIST *) pidlItems.data(), IID_IContextMenu, NULL, (void **) &pContextMenu)))
+       {
+           HMENU hMenu = CreatePopupMenu();
+           if (hMenu)
+           {
+               if (SUCCEEDED(pContextMenu->QueryContextMenu(hMenu, 0, 1, 0x7FFF, CMF_DEFAULTONLY)))
+               {
+                   CMINVOKECOMMANDINFOEX cmd = {0};
+                   cmd.cbSize = sizeof(CMINVOKECOMMANDINFOEX);
+                   cmd.fMask = CMIC_MASK_UNICODE | CMIC_MASK_FLAG_NO_UI;
+                   cmd.hwnd = NULL;
+                   cmd.lpVerb = "delete";
+                   cmd.lpVerbW = L"delete";
+                   cmd.nShow = SW_SHOWNORMAL;
+                   if (FAILED(pContextMenu->InvokeCommand((LPCMINVOKECOMMANDINFO) &cmd)))
+                       Debug::Error("Failed to restore file");
+               }
+               DestroyMenu(hMenu);
+           }
+           pContextMenu->Release();
+       }
+   });
 }
 
 void XPloreManager::EmptyRecycleBin()
 {
     HRESULT result = SHEmptyRecycleBin(NULL, NULL, 0);
+
     if(!result)
         Debug::Error("Failed to empty Recycle Bin with error code:", result);
 }
 
-void XPloreManager::Restore(const Item item)
+void XPloreManager::Restore(const std::unordered_set<Item>& items)
 {
+    std::vector<LPITEMIDLIST> pidlItems;
+
     RecycleBinIterator([&](IShellFolder2 *pRecycleBinFolder, LPITEMIDLIST &pidlItem)
+   {
+       for(const Item& item : items)
        {
            if (ItemSelected(item, pRecycleBinFolder, pidlItem))
+               pidlItems.push_back(pidlItem);
+       }
+   },
+   [&](IShellFolder2* pRecycleBinFolder)
+   {
+       if(pidlItems.empty())
+           return;
+
+       IContextMenu *pContextMenu = NULL;
+       if (SUCCEEDED(pRecycleBinFolder->GetUIObjectOf(NULL, pidlItems.size(), (LPCITEMIDLIST *) pidlItems.data(), IID_IContextMenu, NULL, (void **) &pContextMenu)))
+       {
+           HMENU hMenu = CreatePopupMenu();
+           if (hMenu)
            {
-               IContextMenu *pContextMenu = NULL;
-               if (SUCCEEDED(pRecycleBinFolder->GetUIObjectOf(NULL, 1, (LPCITEMIDLIST *) &pidlItem, IID_IContextMenu, NULL, (void **) &pContextMenu)))
+               if (SUCCEEDED(pContextMenu->QueryContextMenu(hMenu, 0, 1, 0x7FFF, CMF_DEFAULTONLY)))
                {
-                   HMENU hMenu = CreatePopupMenu();
-                   if (hMenu)
-                   {
-                       if (SUCCEEDED(pContextMenu->QueryContextMenu(hMenu, 0, 1, 0x7FFF, CMF_DEFAULTONLY)))
-                       {
-                           CMINVOKECOMMANDINFOEX cmd = {0};
-                           cmd.cbSize = sizeof(CMINVOKECOMMANDINFOEX);
-                           cmd.fMask = CMIC_MASK_UNICODE;
-                           cmd.hwnd = NULL;
-                           cmd.lpVerb = "undelete";
-                           cmd.lpVerbW = L"undelete";
-                           cmd.nShow = SW_SHOWNORMAL;
-                           if (FAILED(pContextMenu->InvokeCommand((LPCMINVOKECOMMANDINFO) &cmd)))
-                               Debug::Error("Failed to restore file");
-                       }
-                       DestroyMenu(hMenu);
-                   }
-                   pContextMenu->Release();
+                   CMINVOKECOMMANDINFOEX cmd = {0};
+                   cmd.cbSize = sizeof(CMINVOKECOMMANDINFOEX);
+                   cmd.fMask = CMIC_MASK_UNICODE | CMIC_MASK_FLAG_NO_UI;
+                   cmd.hwnd = NULL;
+                   cmd.lpVerb = "undelete";
+                   cmd.lpVerbW = L"undelete";
+                   cmd.nShow = SW_SHOWNORMAL;
+                   if (FAILED(pContextMenu->InvokeCommand((LPCMINVOKECOMMANDINFO) &cmd)))
+                       Debug::Error("Failed to restore file");
                }
+               DestroyMenu(hMenu);
            }
-       });
+           pContextMenu->Release();
+       }
+   });
+}
+
+void XPloreManager::TriggerUndo()
+{
+    if(HWND hwnd = FindWindow(TEXT("Progman"), NULL))
+    {
+        if((hwnd = FindWindowEx(hwnd, NULL, TEXT("SHELLDLL_DefView"), NULL)))
+        {
+            if((hwnd = FindWindowEx(hwnd, NULL, TEXT("SysListView32"), NULL)))
+            {
+                SendMessage(hwnd, WM_COMMAND, (WPARAM)0xA809, 0); // Send undo command to shell
+            }
+        }
+    }
 }

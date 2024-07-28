@@ -13,11 +13,13 @@
 #include <memory>
 #include <thread>
 #include <future>
+#include <shared_mutex>
 #include <utility>
 #include <chrono>
 #include <ranges>
 using namespace std::chrono_literals;
 
+#include <cstdint>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -36,3 +38,5 @@ using namespace std::chrono_literals;
 #include "Util/unique_vector.h"
 #include "Debug/Debugger.h"
 #include "Debug/Timer.h"
+
+#include "Events/Input.h"
